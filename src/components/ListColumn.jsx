@@ -1,13 +1,13 @@
-import CardItem from './CardItem.jsx'
-import ListMenu from './ListMenu.jsx'
+import CardItem from "./CardItem.jsx";
+import ListMenu from "./ListMenu.jsx";
 
 const accentStyles = {
-  sun: 'bg-amber-400',
-  sky: 'bg-sky-400',
-  moss: 'bg-emerald-400',
-  clay: 'bg-orange-300',
-  rose: 'bg-rose-400',
-}
+  sun: "bg-amber-400",
+  sky: "bg-sky-400",
+  moss: "bg-emerald-400",
+  clay: "bg-orange-300",
+  rose: "bg-rose-400",
+};
 
 const ListColumn = ({
   list,
@@ -24,12 +24,14 @@ const ListColumn = ({
 }) => {
   return (
     <section
-      className="relative flex h-full min-h-0 w-[280px] shrink-0 flex-col rounded-2xl border border-white/80 bg-white/80 p-4 shadow-[0_14px_30px_rgba(48,36,30,0.12)] animate-[list-in_0.5s_ease_both]"
+      className="relative flex w-[280px] shrink-0 flex-col rounded-2xl border border-white/80 bg-white/80 p-4 shadow-[0_14px_30px_rgba(48,36,30,0.12)] animate-[list-in_0.5s_ease_both]"
       style={{ animationDelay: `${listIndex * 120}ms` }}
     >
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className={`h-2.5 w-2.5 rounded-full ${accentStyles[list.accent]}`} />
+          <span
+            className={`h-2.5 w-2.5 rounded-full ${accentStyles[list.accent]}`}
+          />
           <h2 className="text-sm font-semibold text-stone-900">{list.title}</h2>
         </div>
         <button
@@ -44,7 +46,7 @@ const ListColumn = ({
 
       {isMenuOpen ? <ListMenu onClose={onCloseMenu} /> : null}
 
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+      <div className="min-h-0 space-y-3 overflow-y-auto pr-1">
         {list.cards.map((card, cardIndex) => (
           <CardItem card={card} cardIndex={cardIndex} key={card.id} />
         ))}
@@ -86,7 +88,7 @@ const ListColumn = ({
         </button>
       )}
     </section>
-  )
-}
+  );
+};
 
-export default ListColumn
+export default ListColumn;

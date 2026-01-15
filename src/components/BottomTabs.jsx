@@ -1,10 +1,4 @@
-const tabs = [
-  { id: "inbox", label: "Inbox" },
-  { id: "planner", label: "Planner" },
-  { id: "board", label: "Board", active: true },
-  { id: "switch", label: "Switch boards" },
-];
-
+import { useState } from "react";
 const icons = {
   inbox: (
     <svg
@@ -69,25 +63,38 @@ const icons = {
 };
 
 const BottomTabs = () => {
+  const [activeTab, setActiveTab] = useState("");
+  const tabs = [
+    // { id: "inbox", label: "Inbox" },
+    { id: "planner", label: "Planner" },
+    { id: "board", label: "Board" },
+    { id: "switch", label: "Switch boards" },
+  ];
   return (
-    <div className="flex justify-center pb-4 pt-2">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2">
       <div className="flex items-center gap-2 rounded-2xl border border-black/10 bg-white/90 p-2 shadow-[0_18px_36px_rgba(24,20,18,0.18)] backdrop-blur">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            className={`flex items-center gap-2 rounded-xl p-2 text-sm font-semibold cursor-pointer ${
-              tab.active
-                ? "bg-blue-300 text-blue-600"
-                : "text-stone-700 hover:bg-black/5"
-            }`}
-            type="button"
-          >
-            <span className="grid h-7 w-7 place-items-center rounded-lg border border-black/10 bg-white text-stone-600">
-              {icons[tab.id]}
-            </span>
-            <span className="whitespace-nowrap">{tab.label}</span>
-          </button>
-        ))}
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              className={`flex items-center gap-2 rounded-xl p-2 text-sm font-semibold cursor-pointer ${
+                isActive
+                  ? "bg-blue-300 text-blue-600"
+                  : "text-stone-700 hover:bg-black/5"
+              }`}
+              type="button"
+              onClick={() =>
+                setActiveTab((prev) => (prev === tab.id ? null : tab.id))
+              }
+            >
+              <span className="grid h-7 w-7 place-items-center rounded-lg border border-black/10 bg-white text-stone-600">
+                {icons[tab.id]}
+              </span>
+              <span className="whitespace-nowrap">{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
