@@ -146,7 +146,7 @@ const App = () => {
 
       {/* <BoardMeta listCount={lists.length} cardCount={cardCount} /> */}
 
-      <main className="mt-2 flex gap-3 px-3 pb-23">
+      <main className="mt-2 h-full flex gap-3 px-3 pb-23 overflow-x-auto">
         {lists.map((list, listIndex) => (
           <ListColumn
             key={list.id}
