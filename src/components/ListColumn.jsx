@@ -24,7 +24,7 @@ const ListColumn = ({
 }) => {
   return (
     <section
-      className="relative flex w-[280px] shrink-0 flex-col rounded-2xl border border-white/80 bg-white/80 p-4 shadow-[0_14px_30px_rgba(48,36,30,0.12)] animate-[list-in_0.5s_ease_both]"
+      className="relative flex h-fit max-h-full w-[280px] shrink-0 flex-col rounded-xl border border-white/80 bg-white/80 shadow-[0_14px_30px_rgba(48,36,30,0.12)] animate-[list-in_0.5s_ease_both]"
       style={{ animationDelay: `${listIndex * 120}ms` }}
     >
       <div className="mb-3 flex items-center justify-between">
@@ -46,7 +46,7 @@ const ListColumn = ({
 
       {isMenuOpen ? <ListMenu onClose={onCloseMenu} /> : null}
 
-      <div className="min-h-0 space-y-3 overflow-y-auto pr-1">
+      <div className="min-h-0 space-y-3 overflow-y-auto">
         {list.cards.map((card, cardIndex) => (
           <CardItem card={card} cardIndex={cardIndex} key={card.id} />
         ))}

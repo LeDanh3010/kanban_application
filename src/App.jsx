@@ -4,6 +4,8 @@ import ListColumn from "./components/ListColumn.jsx";
 import NewList from "./components/NewList.jsx";
 import Topbar from "./components/Topbar.jsx";
 import BottomTabs from "./components/BottomTabs.jsx";
+import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
+import "overlayscrollbars/overlayscrollbars.css";
 
 const accentCycle = ["sun", "sky", "moss", "clay", "rose"];
 
@@ -132,8 +134,8 @@ const App = () => {
                 },
               ],
             }
-          : list
-      )
+          : list,
+      ),
     );
 
     setDraftCard("");
@@ -146,37 +148,43 @@ const App = () => {
 
       {/* <BoardMeta listCount={lists.length} cardCount={cardCount} /> */}
 
-      <main className="mt-2 h-full flex gap-3 px-3 pb-23 overflow-x-auto">
-        {lists.map((list, listIndex) => (
-          <ListColumn
-            key={list.id}
-            list={list}
-            listIndex={listIndex}
-            activeComposer={activeComposer}
-            onOpenComposer={setActiveComposer}
-            draftCard={draftCard}
-            onDraftChange={setDraftCard}
-            onAddCard={handleAddCard}
-            onCloseComposer={() => {
-              setActiveComposer(null);
-              setDraftCard("");
-            }}
-            isMenuOpen={openMenuListId === list.id}
-            onToggleMenu={() =>
-              setOpenMenuListId((current) =>
-                current === list.id ? null : list.id
-              )
-            }
-            onCloseMenu={() => setOpenMenuListId(null)}
-          />
-        ))}
+      <OverlayScrollbarsComponent
+        className="h-full"
+        options={{ overflow: { y: "hidden", x: "scroll" } }}
+        defer
+      >
+        <main className="mt-2 h-full flex gap-3 px-3 pb-24">
+          {lists.map((list, listIndex) => (
+            <ListColumn
+              key={list.id}
+              list={list}
+              listIndex={listIndex}
+              activeComposer={activeComposer}
+              onOpenComposer={setActiveComposer}
+              draftCard={draftCard}
+              onDraftChange={setDraftCard}
+              onAddCard={handleAddCard}
+              onCloseComposer={() => {
+                setActiveComposer(null);
+                setDraftCard("");
+              }}
+              isMenuOpen={openMenuListId === list.id}
+              onToggleMenu={() =>
+                setOpenMenuListId((current) =>
+                  current === list.id ? null : list.id,
+                )
+              }
+              onCloseMenu={() => setOpenMenuListId(null)}
+            />
+          ))}
 
-        <NewList
-          title={newListTitle}
-          onTitleChange={setNewListTitle}
-          onAddList={handleAddList}
-        />
-      </main>
+          <NewList
+            title={newListTitle}
+            onTitleChange={setNewListTitle}
+            onAddList={handleAddList}
+          />
+        </main>
+      </OverlayScrollbarsComponent>
 
       <BottomTabs />
     </div>
