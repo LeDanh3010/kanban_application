@@ -1,4 +1,5 @@
 import { useState } from "react";
+import BoardSwitchModal from "./boards/BoardSwitchModal.jsx";
 const icons = {
   inbox: (
     <svg
@@ -62,8 +63,9 @@ const icons = {
   ),
 };
 
-const BottomTabs = () => {
+const BottomTabs = ({ boards, activeBoardId, onSwitchBoard }) => {
   const [activeTab, setActiveTab] = useState("");
+  const [isSwitchOpen, setIsSwitchOpen] = useState(false);
   const tabs = [
     // { id: "inbox", label: "Inbox" },
     { id: "planner", label: "Planner" },
@@ -71,32 +73,52 @@ const BottomTabs = () => {
     { id: "switch", label: "Switch boards" },
   ];
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2">
-      <div className="flex items-center gap-2 rounded-2xl border border-black/10 bg-white/90 p-2 shadow-[0_18px_36px_rgba(24,20,18,0.18)] backdrop-blur">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              className={`flex items-center gap-2 rounded-xl p-2 text-sm font-semibold cursor-pointer ${
-                isActive
-                  ? "bg-blue-300 text-blue-600"
-                  : "text-stone-700 hover:bg-black/5"
-              }`}
-              type="button"
-              onClick={() =>
-                setActiveTab((prev) => (prev === tab.id ? null : tab.id))
-              }
-            >
-              <span className="grid h-7 w-7 place-items-center rounded-lg border border-black/10 bg-white text-stone-600">
-                {icons[tab.id]}
-              </span>
-              <span className="whitespace-nowrap">{tab.label}</span>
-            </button>
-          );
-        })}
+    <>
+      {isSwitchOpen ? (
+        <BoardSwitchModal
+          boards={boards}
+          activeBoardId={activeBoardId}
+          onClose={() => setIsSwitchOpen(false)}
+          onSelect={(id) => {
+            onSwitchBoard?.(id);
+            setIsSwitchOpen(false);
+          }}
+        />
+      ) : null}
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2">
+        <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/80 p-2 text-slate-100 shadow-[0_18px_36px_rgba(10,12,20,0.5)]">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                className={`flex items-center gap-2 rounded-xl p-2 text-sm font-semibold cursor-pointer transition-all duration-300 ease-in-out ${
+                  isActive
+                    ? "bg-white/10 text-slate-200 scale-105"
+                    : "text-slate-200 hover:bg-white/10 hover:scale-102"
+                }`}
+                type="button"
+                onClick={() => {
+                  if (tab.id === "switch") {
+                    setIsSwitchOpen(true);
+                    setActiveTab(tab.id);
+                    return;
+                  }
+                  setActiveTab((prev) => (prev === tab.id ? null : tab.id));
+                }}
+              >
+                <span className="grid h-7 w-7 place-items-center rounded-lg border border-white/10 bg-white/10 text-slate-200 transition-transform duration-300 ease-in-out group-hover:rotate-6">
+                  {icons[tab.id]}
+                </span>
+                <span className="whitespace-nowrap transition-opacity duration-300">
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

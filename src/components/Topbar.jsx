@@ -1,25 +1,49 @@
 import React from "react";
 
-const Topbar = () => {
+const Topbar = ({ title = "Kanban", onBack }) => {
   return (
-    <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between bg-white/80 p-3">
+    <header
+      className={
+        "flex flex-col gap-4 bg-slate-900 p-3 text-slate-100 lg:flex-row lg:items-center lg:justify-between"
+      }
+    >
       <div className="flex items-center gap-4">
+        {onBack ? (
+          <button
+            className="grid h-9 w-9 place-items-center rounded-full border border-slate-700 bg-slate-900 text-slate-200 shadow-[0_8px_18px_rgba(15,16,20,0.35)]"
+            type="button"
+            onClick={onBack}
+            aria-label="Back to boards"
+          >
+            <svg
+              className="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+        ) : null}
         <div>
-          <p className="text-lg font-semibold tracking-wide text-stone-900">
-            Kanban
+          <p className="text-lg font-semibold tracking-wide text-slate-100">
+            {title}
           </p>
         </div>
       </div>
       <div>
         <input
-          className="h-10 w-full rounded-full border border-black/10 bg-white/80 px-4 text-sm text-stone-700 shadow-[0_8px_18px_rgba(24,20,18,0.08)] outline-none focus:border-stone-400 sm:w-120"
+          className="h-10 w-full rounded-full border border-slate-800 bg-slate-900 px-4 text-sm text-slate-200 shadow-[0_8px_18px_rgba(15,16,20,0.35)] outline-none placeholder:text-slate-500 focus:border-slate-600 sm:w-120"
           type="search"
           placeholder="Search cards"
         />
       </div>
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center lg:w-auto">
         <button
-          className="flex w-full items-center justify-center gap-2 rounded-full border border-black/10 bg-white/80 px-4 py-2 text-sm font-semibold text-stone-800 shadow-[0_8px_18px_rgba(24,20,18,0.08)] sm:w-auto cursor-pointer"
+          className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-100 shadow-[0_8px_18px_rgba(15,16,20,0.35)] sm:w-auto cursor-pointer"
           type="button"
         >
           <svg
@@ -39,7 +63,7 @@ const Topbar = () => {
         </button>
         <div className="flex items-center justify-end gap-2 sm:ml-2">
           <button
-            className="grid h-10 w-10 place-items-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-[0_8px_18px_rgba(24,20,18,0.08)] cursor-pointer"
+            className="grid h-10 w-10 place-items-center rounded-full border border-slate-700 bg-slate-900 text-slate-300 shadow-[0_8px_18px_rgba(15,16,20,0.35)] cursor-pointer"
             type="button"
             aria-label="Filter"
           >
@@ -58,7 +82,7 @@ const Topbar = () => {
             </svg>
           </button>
           <button
-            className="grid h-10 w-10 place-items-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-[0_8px_18px_rgba(24,20,18,0.08)] cursor-pointer"
+            className="grid h-10 w-10 place-items-center rounded-full border border-slate-700 bg-slate-900 text-slate-300 shadow-[0_8px_18px_rgba(15,16,20,0.35)] cursor-pointer"
             type="button"
             aria-label="Notifications"
           >
@@ -76,7 +100,7 @@ const Topbar = () => {
             </svg>
           </button>
           <button
-            className="grid h-10 w-10 place-items-center rounded-full border border-black/10 bg-white/80 text-stone-700 shadow-[0_8px_18px_rgba(24,20,18,0.08)] cursor-pointer"
+            className="grid h-10 w-10 place-items-center rounded-full border border-slate-700 bg-slate-900 text-slate-200 shadow-[0_8px_18px_rgba(15,16,20,0.35)] cursor-pointer"
             type="button"
             aria-label="Account"
           >
