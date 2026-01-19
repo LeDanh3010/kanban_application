@@ -26,6 +26,7 @@ const ListColumn = ({
   onCloseMenu,
   onEditTitleList,
   onOpenCard,
+  onToggleCard,
 }) => {
   const listBodyRef = useRef(null);
   const prevCountRef = useRef(list.cards.length);
@@ -147,6 +148,7 @@ const ListColumn = ({
               cardIndex={cardIndex}
               key={card.id}
               onOpen={(next) => onOpenCard?.(next, list)}
+              onToggle={() => onToggleCard?.(list.id, card.id)}
             />
           ))}
         </div>

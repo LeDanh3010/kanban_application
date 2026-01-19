@@ -68,20 +68,31 @@ const BoardView = ({
                 {
                   id: `c${Date.now()}`,
                   title,
-                  note: "New card ready for detail",
-                  tags: ["New"],
-                  due: "No date",
+                  completed: false,
                 },
               ],
             }
           : list,
       ),
     );
-
-    setDraftCard("");
-    setActiveComposer(null);
   };
 
+  const handleToggleCard = (listId, cardId) => {
+    onUpdateLists((current) =>
+      current.map((list) =>
+        list.id === listId
+          ? {
+              ...list,
+              cards: list.cards.map((card) =>
+                card.id === cardId
+                  ? { ...card, completed: !card.completed }
+                  : card,
+              ),
+            }
+          : list,
+      ),
+    );
+  };
   const backdropStyle = board.cover
     ? { backgroundImage: `url(${board.cover})` }
     : {
@@ -100,49 +111,50 @@ const BoardView = ({
       <div className="relative z-10 flex h-screen flex-col">
         <Topbar title={board.title} onBack={onBack} />
 
-      <OverlayScrollbarsComponent
-        className="h-full flex"
-        options={{
-          overflow: { y: "hidden", x: "scroll" },
-        }}
-        defer
-      >
-        <main className="mt-2 h-full flex gap-3 px-3 pb-24">
-          {board.lists.map((list, listIndex) => (
-            <ListColumn
-              key={list.id}
-              list={list}
-              listIndex={listIndex}
-              activeComposer={activeComposer}
-              onOpenComposer={setActiveComposer}
-              onEditTitleList={handleTitleEdit}
-              draftCard={draftCard}
-              onDraftChange={setDraftCard}
-              onAddCard={handleAddCard}
-              onCloseComposer={() => {
-                setActiveComposer(null);
-                setDraftCard("");
-              }}
-              isMenuOpen={openMenuListId === list.id}
-              onToggleMenu={() =>
-                setOpenMenuListId((current) =>
-                  current === list.id ? null : list.id,
-                )
-              }
-              onCloseMenu={() => setOpenMenuListId(null)}
-              onOpenCard={(card, listInfo) =>
-                setActiveCard({ card, list: listInfo })
-              }
-            />
-          ))}
+        <OverlayScrollbarsComponent
+          className="h-full flex"
+          options={{
+            overflow: { y: "hidden", x: "scroll" },
+          }}
+          defer
+        >
+          <main className="mt-2 h-full flex gap-3 px-3 pb-24">
+            {board.lists.map((list, listIndex) => (
+              <ListColumn
+                key={list.id}
+                list={list}
+                listIndex={listIndex}
+                activeComposer={activeComposer}
+                onOpenComposer={setActiveComposer}
+                onEditTitleList={handleTitleEdit}
+                draftCard={draftCard}
+                onDraftChange={setDraftCard}
+                onAddCard={handleAddCard}
+                onCloseComposer={() => {
+                  setActiveComposer(null);
+                  setDraftCard("");
+                }}
+                isMenuOpen={openMenuListId === list.id}
+                onToggleMenu={() =>
+                  setOpenMenuListId((current) =>
+                    current === list.id ? null : list.id,
+                  )
+                }
+                onCloseMenu={() => setOpenMenuListId(null)}
+                onOpenCard={(card, listInfo) =>
+                  setActiveCard({ card, list: listInfo })
+                }
+                onToggleCard={handleToggleCard}
+              />
+            ))}
 
-          <NewList
-            title={newListTitle}
-            onTitleChange={setNewListTitle}
-            onAddList={handleAddList}
-          />
-        </main>
-      </OverlayScrollbarsComponent>
+            <NewList
+              title={newListTitle}
+              onTitleChange={setNewListTitle}
+              onAddList={handleAddList}
+            />
+          </main>
+        </OverlayScrollbarsComponent>
 
         <BottomTabs
           boards={boards}
