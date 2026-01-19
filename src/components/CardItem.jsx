@@ -1,10 +1,37 @@
-const CardItem = ({ card, cardIndex, onOpen, onToggle }) => {
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+const CardItem = ({ card, cardIndex, onOpen, onToggle, listId }) => {
   const isDone = Boolean(card.completed);
+  const {
+    setNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: `card-${card.id}`,
+    data: { type: "card", listId, cardId: card.id },
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   return (
     <article
-      className="group relative cursor-pointer rounded-lg border border-white/10 bg-slate-900/50 p-3 text-slate-100 transition-shadow duration-300 hover:shadow-[0_12px_24px_rgba(6,10,20,0.35)]"
-      style={{ animationDelay: `${cardIndex * 80}ms` }}
+      ref={setNodeRef}
+      className={`group relative cursor-pointer rounded-lg border border-white/10 bg-slate-900/50 p-3 text-slate-100 transition-shadow duration-300 hover:shadow-[0_12px_24px_rgba(6,10,20,0.35)] ${
+        isDragging ? "opacity-60" : ""
+      }`}
+      style={{
+        animationDelay: `${cardIndex * 80}ms`,
+        transition: "transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1)",
+        ...style,
+      }}
+      {...attributes}
+      {...listeners}
       onClick={() => onOpen?.(card)}
     >
       <button

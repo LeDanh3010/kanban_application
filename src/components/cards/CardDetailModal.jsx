@@ -1,3 +1,5 @@
+import Button from "../ui/Button.jsx";
+
 const CardDetailModal = ({ card, listTitle, onClose }) => {
   if (!card) return null;
 
@@ -17,53 +19,61 @@ const CardDetailModal = ({ card, listTitle, onClose }) => {
             </span>
             <h2 className="text-lg font-semibold">{card.title}</h2>
           </div>
-          <button
-            className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-slate-300 hover:bg-white/10"
+          <Button
+            variant="ghost"
+            className="h-9 w-9 border-white/10 text-slate-300"
             type="button"
             onClick={onClose}
             aria-label="Close"
           >
-            <span className="text-base">x</span>
-          </button>
+            <span className="text-base">✕</span>
+          </Button>
         </header>
 
         <div className="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           <section className="space-y-5">
             <div className="flex flex-wrap gap-2">
-              <button
-                className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/10"
+              <Button
+                variant="ghost"
+                className="rounded-lg border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-200 hover:bg-white/10"
                 type="button"
               >
                 + Add
-              </button>
-              <button
-                className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/10"
+              </Button>
+              <Button
+                variant="ghost"
+                className="rounded-lg border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-200 hover:bg-white/10"
                 type="button"
               >
                 Labels
-              </button>
-              <button
-                className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/10"
+              </Button>
+              <Button
+                variant="ghost"
+                className="rounded-lg border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-200 hover:bg-white/10"
                 type="button"
               >
                 Dates
-              </button>
-              <button
-                className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/10"
+              </Button>
+              <Button
+                variant="ghost"
+                className="rounded-lg border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-200 hover:bg-white/10"
                 type="button"
               >
                 Checklist
-              </button>
-              <button
-                className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/10"
+              </Button>
+              <Button
+                variant="ghost"
+                className="rounded-lg border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-200 hover:bg-white/10"
                 type="button"
               >
                 Members
-              </button>
+              </Button>
             </div>
 
             <div>
-              <p className="text-sm font-semibold text-slate-200">Description</p>
+              <p className="text-sm font-semibold text-slate-200">
+                Description
+              </p>
               <textarea
                 className="mt-2 min-h-[120px] w-full rounded-xl border border-white/10 bg-slate-950/70 p-3 text-sm text-slate-200 outline-none placeholder:text-slate-500 focus:border-white/30"
                 placeholder="Add a more detailed description..."
@@ -77,12 +87,13 @@ const CardDetailModal = ({ card, listTitle, onClose }) => {
               <p className="text-sm font-semibold text-slate-200">
                 Comments and activity
               </p>
-              <button
-                className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/10"
+              <Button
+                variant="ghost"
+                className="rounded-lg border-white/10 bg-white/5 px-3 py-1.5 text-xs text-slate-200 hover:bg-white/10"
                 type="button"
               >
                 Show details
-              </button>
+              </Button>
             </div>
             <input
               className="h-10 w-full rounded-lg border border-white/10 bg-slate-950/70 px-3 text-sm text-slate-200 outline-none placeholder:text-slate-500 focus:border-white/30"

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import Button from "../ui/Button.jsx";
 
 const BoardSwitchModal = ({ boards, activeBoardId, onClose, onSelect }) => {
   const [query, setQuery] = useState("");
@@ -42,14 +43,15 @@ const BoardSwitchModal = ({ boards, activeBoardId, onClose, onSelect }) => {
               onChange={(event) => setQuery(event.target.value)}
             />
           </div>
-          <button
-            className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 text-slate-300 hover:bg-white/10"
+          <Button
+            variant="ghost"
+            className="h-9 w-9 rounded-lg border-white/10 text-slate-300"
             type="button"
             onClick={onClose}
             aria-label="Close"
           >
             <span className="text-base">x</span>
-          </button>
+          </Button>
         </div>
 
         <div className="mt-5">

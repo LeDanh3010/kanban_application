@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from "react";
+import { useDroppable } from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
 import "overlayscrollbars/overlayscrollbars.css";
 import CardItem from "./CardItem.jsx";
 import ListMenu from "./ListMenu.jsx";
-
-// const accentStyles = {
-//   sun: "bg-amber-400",
-//   sky: "bg-sky-400",
-//   moss: "bg-emerald-400",
-//   clay: "bg-orange-300",
-//   rose: "bg-rose-400",
-// };
+import Button from "./ui/Button.jsx";
 
 const ListColumn = ({
   list,
@@ -33,6 +33,7 @@ const ListColumn = ({
   const didMountRef = useRef(false);
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef(null);
+
   useEffect(() => {
     if (!didMountRef.current) {
       didMountRef.current = true;
@@ -49,6 +50,7 @@ const ListColumn = ({
 
     prevCountRef.current = list.cards.length;
   }, [list.cards.length]);
+
   const autoResize = (el) => {
     if (!el) return;
     el.style.height = "auto";
@@ -71,6 +73,7 @@ const ListColumn = ({
       onEditTitleList?.(list.id, next);
     }
   };
+
   useEffect(() => {
     if (!isEditing) return;
     requestAnimationFrame(() => {
@@ -89,13 +92,56 @@ const ListColumn = ({
     return () =>
       document.removeEventListener("pointerdown", onPointerDown, true);
   }, [isEditing]);
+
+  const {
+    setNodeRef: setColumnNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: `column-${list.id}`,
+    data: { type: "column", listId: list.id },
+    transition: {
+      duration: 250,
+      easing: "cubic-bezier(0.2, 0.7, 0.2, 1)",
+    },
+  });
+
+  const { setNodeRef: setCardsDropRef, isOver } = useDroppable({
+    id: `list-${list.id}`,
+    data: { type: "list", listId: list.id },
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: transition || "transform 250ms cubic-bezier(0.2, 0.7, 0.2, 1)",
+    touchAction: "none",
+  };
+
   return (
     <section
-      className="relative flex h-fit max-h-full w-[280px] shrink-0 flex-col rounded-xl border border-white/10 bg-slate-900/55 text-slate-100 shadow-[0_16px_36px_rgba(4,6,12,0.55)] animate-[list-in_0.5s_ease_both]"
-      style={{ animationDelay: `${listIndex * 120}ms` }}
+      ref={setColumnNodeRef}
+      className={`relative flex h-fit max-h-full w-[280px] shrink-0 flex-col rounded-xl border border-white/10 bg-slate-900/55 text-slate-100 shadow-[0_16px_36px_rgba(4,6,12,0.55)] animate-[list-in_0.5s_ease_both] ${
+        isDragging
+          ? "opacity-50 scale-105 rotate-1 shadow-[0_24px_48px_rgba(4,6,12,0.75)] z-50 cursor-grabbing"
+          : "opacity-100 scale-100 rotate-0 cursor-grab"
+      }`}
+      style={{
+        animationDelay: `${listIndex * 120}ms`,
+        ...style,
+      }}
     >
-      <div className="relative mb-3 pt-3 px-3 flex gap-2 items-center h-auto justify-between">
-        <div className="flex w-full min-w-0 " onClick={handleTitleEdit}>
+      <div
+        className="relative mb-3 pt-3 px-3 flex gap-2 items-center h-auto justify-between"
+        {...attributes}
+        {...listeners}
+      >
+        <div
+          className="flex w-full min-w-0 items-center gap-2"
+          onClick={handleTitleEdit}
+        >
           {!isEditing ? (
             <h2 className="min-w-0 text-sm font-semibold text-slate-100 break-words whitespace-normal">
               {list.title}
@@ -106,19 +152,17 @@ const ListColumn = ({
               rows={1}
               defaultValue={list.title}
               onInput={(e) => autoResize(e.currentTarget)}
+              onPointerDown={(event) => event.stopPropagation()}
               className="w-full resize-none overflow-hidden rounded-sm p-2 font-semibold border border-white/10 bg-white/15 text-sm text-slate-100 outline-none focus:border-white/30 whitespace-pre-wrap wrap-break-word"
             />
           )}
         </div>
         <button
-          className=" cursor-pointer rounded-xl bg-transparent border-none outline-none
-    px-2.5 py-1 text-sm font-semibold text-slate-300
-    shadow-[0_8px_18px_rgba(15,16,20,0.35)]
-    hover:bg-white/10 hover:shadow-[0_12px_24px_rgba(15,16,20,0.45)]
-    transition-all duration-200 ease-out"
+          className="cursor-pointer rounded-xl bg-transparent border-none outline-none px-2.5 py-1 text-sm font-semibold text-slate-300 shadow-[0_8px_18px_rgba(15,16,20,0.35)] hover:bg-white/10 hover:shadow-[0_12px_24px_rgba(15,16,20,0.45)] transition-all duration-200 ease-out"
           type="button"
           aria-label="List options"
           onClick={onToggleMenu}
+          onPointerDown={(event) => event.stopPropagation()}
         >
           <svg
             className="h-5 w-5"
@@ -141,16 +185,30 @@ const ListColumn = ({
         }}
         defer
       >
-        <div className="space-y-3 overflow-x-hidden" ref={listBodyRef}>
-          {list.cards.map((card, cardIndex) => (
-            <CardItem
-              card={card}
-              cardIndex={cardIndex}
-              key={card.id}
-              onOpen={(next) => onOpenCard?.(next, list)}
-              onToggle={() => onToggleCard?.(list.id, card.id)}
-            />
-          ))}
+        <div
+          className={`space-y-3 overflow-x-hidden rounded-lg transition-colors duration-200 ${
+            isOver ? "bg-white/5" : ""
+          }`}
+          ref={(node) => {
+            listBodyRef.current = node;
+            setCardsDropRef(node);
+          }}
+        >
+          <SortableContext
+            items={list.cards.map((card) => `card-${card.id}`)}
+            strategy={verticalListSortingStrategy}
+          >
+            {list.cards.map((card, cardIndex) => (
+              <CardItem
+                card={card}
+                cardIndex={cardIndex}
+                key={card.id}
+                onOpen={(next) => onOpenCard?.(next, list)}
+                onToggle={() => onToggleCard?.(list.id, card.id)}
+                listId={list.id}
+              />
+            ))}
+          </SortableContext>
         </div>
       </OverlayScrollbarsComponent>
 
@@ -162,22 +220,25 @@ const ListColumn = ({
             onChange={(event) => onDraftChange(event.target.value)}
             rows={3}
             placeholder="Write a task title"
+            onPointerDown={(event) => event.stopPropagation()}
           />
           <div className="flex gap-2">
-            <button
-              className="rounded-full cursor-pointer bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-900"
+            <Button
+              variant="solid"
+              className="px-3 py-1.5 text-sm"
               type="button"
               onClick={() => onAddCard(list.id)}
             >
               Add card
-            </button>
-            <button
-              className="rounded-full border cursor-pointer border-white/10 bg-white/10 px-3 py-1.5 text-sm font-semibold text-slate-200"
+            </Button>
+            <Button
+              variant="ghost"
+              className="px-3 py-1.5 text-sm text-slate-200"
               type="button"
               onClick={onCloseComposer}
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
@@ -186,6 +247,7 @@ const ListColumn = ({
             className="mt-3 w-full rounded-xl font-semibold cursor-pointer border border-dashed border-white/20 px-3 py-2 text-sm text-slate-300 transition hover:bg-white/10"
             type="button"
             onClick={() => onOpenComposer(list.id)}
+            onPointerDown={(event) => event.stopPropagation()}
           >
             + Add a card
           </button>

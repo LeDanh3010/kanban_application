@@ -1,4 +1,5 @@
 import { accentStyles, getCardCount } from "../../data/boards.js";
+import Button from "../ui/Button.jsx";
 
 const BoardCard = ({ board, onOpen }) => {
   const cardCount = getCardCount(board.lists);

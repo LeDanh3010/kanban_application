@@ -1,4 +1,5 @@
 import React from "react";
+import Button from "./ui/Button.jsx";
 
 const Topbar = ({ title = "Kanban", onBack }) => {
   return (
@@ -10,7 +11,7 @@ const Topbar = ({ title = "Kanban", onBack }) => {
       <div className="flex items-center gap-4">
         {onBack ? (
           <button
-            className="grid h-9 w-9 place-items-center rounded-full border border-slate-700 bg-slate-900 text-slate-200 shadow-[0_8px_18px_rgba(15,16,20,0.35)]"
+            className="grid cursor-pointer h-9 w-9 place-items-center rounded-full border border-slate-700 bg-slate-900 text-slate-200 shadow-[0_8px_18px_rgba(15,16,20,0.35)]"
             type="button"
             onClick={onBack}
             aria-label="Back to boards"
@@ -42,10 +43,7 @@ const Topbar = ({ title = "Kanban", onBack }) => {
         />
       </div>
       <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center lg:w-auto">
-        <button
-          className="flex w-full items-center justify-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-100 shadow-[0_8px_18px_rgba(15,16,20,0.35)] sm:w-auto cursor-pointer"
-          type="button"
-        >
+        <Button className="w-full px-4 py-2 text-sm sm:w-auto">
           <svg
             className="h-4 w-4"
             viewBox="0 0 24 24"
@@ -60,13 +58,9 @@ const Topbar = ({ title = "Kanban", onBack }) => {
             <path d="m8 8 4-4 4 4" />
           </svg>
           Share
-        </button>
+        </Button>
         <div className="flex items-center justify-end gap-2 sm:ml-2">
-          <button
-            className="grid h-10 w-10 place-items-center rounded-full border border-slate-700 bg-slate-900 text-slate-300 shadow-[0_8px_18px_rgba(15,16,20,0.35)] cursor-pointer"
-            type="button"
-            aria-label="Filter"
-          >
+          <Button variant="icon" aria-label="Filter">
             <svg
               className="h-5 w-5"
               viewBox="0 0 24 24"
@@ -80,12 +74,8 @@ const Topbar = ({ title = "Kanban", onBack }) => {
               <path d="M7 12h10" />
               <path d="M10 19h4" />
             </svg>
-          </button>
-          <button
-            className="grid h-10 w-10 place-items-center rounded-full border border-slate-700 bg-slate-900 text-slate-300 shadow-[0_8px_18px_rgba(15,16,20,0.35)] cursor-pointer"
-            type="button"
-            aria-label="Notifications"
-          >
+          </Button>
+          <Button variant="icon" aria-label="Notifications">
             <svg
               className="h-5 w-5"
               viewBox="0 0 24 24"
@@ -98,14 +88,10 @@ const Topbar = ({ title = "Kanban", onBack }) => {
               <path d="M15 17H6c-1.1 0-2-.9-2-2 1.4-1.2 2-2.9 2-5a6 6 0 1 1 12 0c0 2.1.6 3.8 2 5 0 1.1-.9 2-2 2h-3" />
               <path d="M9 17a3 3 0 0 0 6 0" />
             </svg>
-          </button>
-          <button
-            className="grid h-10 w-10 place-items-center rounded-full border border-slate-700 bg-slate-900 text-slate-200 shadow-[0_8px_18px_rgba(15,16,20,0.35)] cursor-pointer"
-            type="button"
-            aria-label="Account"
-          >
+          </Button>
+          <Button variant="icon" aria-label="Account" className="text-slate-200">
             <span className="text-sm font-semibold">JL</span>
-          </button>
+          </Button>
         </div>
       </div>
     </header>

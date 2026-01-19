@@ -1,5 +1,6 @@
 import { useState } from "react";
 import BoardSwitchModal from "./boards/BoardSwitchModal.jsx";
+import Button from "./ui/Button.jsx";
 const icons = {
   inbox: (
     <svg
@@ -90,9 +91,10 @@ const BottomTabs = ({ boards, activeBoardId, onSwitchBoard }) => {
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
-              <button
+              <Button
                 key={tab.id}
-                className={`flex items-center gap-2 rounded-xl p-2 text-sm font-semibold cursor-pointer transition-all duration-300 ease-in-out ${
+                variant="tab"
+                className={`flex items-center gap-2 font-semibold transition-all duration-300 ease-in-out ${
                   isActive
                     ? "bg-white/10 text-slate-200 scale-105"
                     : "text-slate-200 hover:bg-white/10 hover:scale-102"
@@ -113,7 +115,7 @@ const BottomTabs = ({ boards, activeBoardId, onSwitchBoard }) => {
                 <span className="whitespace-nowrap transition-opacity duration-300">
                   {tab.label}
                 </span>
-              </button>
+              </Button>
             );
           })}
         </div>
