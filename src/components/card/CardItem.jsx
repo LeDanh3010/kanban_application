@@ -35,7 +35,7 @@ const CardItem = ({ card, cardIndex, onOpen, onToggle, listId }) => {
       onClick={() => onOpen?.(card)}
     >
       <button
-        className={`absolute left-3 cursor-pointer top-3 grid h-5 w-5 place-items-center rounded-full border-2 transition-all duration-500 ease-out ${
+        className={`absolute left-3 z-20 cursor-pointer top-3 grid h-5 w-5 place-items-center rounded-full border-2 transition-all duration-500 ease-out ${
           isDone
             ? "border-emerald-400/80 bg-emerald-400/25 text-emerald-200 opacity-100 scale-100"
             : "border-white/40 bg-white/5 text-transparent opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 group-hover:border-white/60 group-hover:bg-white/10"
@@ -46,6 +46,7 @@ const CardItem = ({ card, cardIndex, onOpen, onToggle, listId }) => {
           event.stopPropagation();
           onToggle?.();
         }}
+        onPointerDown={(e) => e.stopPropagation()}
       >
         <span
           className={`text-[10px] font-bold transition-all duration-300 ${isDone ? "scale-100" : "scale-0 group-hover:scale-0"}`}

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import BoardSwitchModal from "./boards/BoardSwitchModal.jsx";
-import Button from "./ui/Button.jsx";
+import BoardSwitchModal from "../board/BoardSwitchModal.jsx";
+import Button from "../ui/Button.jsx";
 const icons = {
   inbox: (
     <svg

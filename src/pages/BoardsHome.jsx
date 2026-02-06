@@ -1,9 +1,9 @@
 import { useState } from "react";
-import Topbar from "../components/Topbar.jsx";
-import BoardCard from "../components/boards/BoardCard.jsx";
-import CreateBoardModal from "../components/boards/CreateBoardModal.jsx";
+import Topbar from "../components/layout/Topbar.jsx";
+import BoardCard from "../components/board/BoardCard.jsx";
+import CreateBoardModal from "../components/board/CreateBoardModal.jsx";
 
-const BoardsHome = ({ boards, onOpenBoard, onCreateBoard }) => {
+const BoardsHome = ({ boards, onOpenBoard, onCreateBoard, user, onLogout, onGoToAdmin }) => {
   const [isCreating, setIsCreating] = useState(false);
 
   return (
@@ -17,32 +17,31 @@ const BoardsHome = ({ boards, onOpenBoard, onCreateBoard }) => {
               <h1 className="text-lg font-semibold text-slate-100">
                 Your Workspace
               </h1>
+              {user && <p className="text-sm text-slate-400">Welcome, {user.name}</p>}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {onGoToAdmin && (
+              <button
+                className="rounded-lg bg-indigo-500/20 px-3 py-1.5 text-sm font-semibold text-indigo-200 hover:bg-indigo-500/30 transition-colors"
+                type="button"
+                onClick={onGoToAdmin}
+              >
+                Admin Dashboard
+              </button>
+            )}
             <button
-              className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-semibold text-slate-100"
+              className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm font-semibold text-slate-100 hover:bg-slate-700 transition-colors"
               type="button"
             >
               Boards
             </button>
-            <button
-              className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-semibold text-slate-300"
+             <button
+              className="rounded-lg bg-rose-500/10 px-3 py-1.5 text-sm font-semibold text-rose-400 hover:bg-rose-500/20 transition-colors"
               type="button"
+              onClick={onLogout}
             >
-              Members
-            </button>
-            <button
-              className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-semibold text-slate-300"
-              type="button"
-            >
-              Settings
-            </button>
-            <button
-              className="rounded-lg bg-fuchsia-500/20 px-3 py-1.5 text-sm font-semibold text-fuchsia-200"
-              type="button"
-            >
-              Upgrade
+              Log Out
             </button>
           </div>
         </div>

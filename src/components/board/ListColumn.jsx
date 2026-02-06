@@ -8,9 +8,9 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
 import "overlayscrollbars/overlayscrollbars.css";
-import CardItem from "./CardItem.jsx";
+import CardItem from "../card/CardItem.jsx";
 import ListMenu from "./ListMenu.jsx";
-import Button from "./ui/Button.jsx";
+import Button from "../ui/Button.jsx";
 
 const ListColumn = ({
   list,
@@ -27,12 +27,16 @@ const ListColumn = ({
   onEditTitleList,
   onOpenCard,
   onToggleCard,
+  onCopyList,
+  onDeleteList,
+  onClearList,
 }) => {
-  const listBodyRef = useRef(null);
+  const scrollbarRef = useRef(null);
   const prevCountRef = useRef(list.cards.length);
   const didMountRef = useRef(false);
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef(null);
+  const focusRef = useRef(null);
 
   useEffect(() => {
     if (!didMountRef.current) {
@@ -42,9 +46,10 @@ const ListColumn = ({
     }
 
     if (list.cards.length > prevCountRef.current) {
-      const listBody = listBodyRef.current;
-      if (listBody) {
-        listBody.scrollTo({ top: listBody.scrollHeight, behavior: "smooth" });
+      const osInstance = scrollbarRef.current?.osInstance();
+      if (osInstance) {
+        const { viewport } = osInstance.elements();
+        viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
       }
     }
 
@@ -73,6 +78,30 @@ const ListColumn = ({
       onEditTitleList?.(list.id, next);
     }
   };
+  const composerRef = useRef(null);
+
+  useEffect(() => {
+    if (activeComposer !== list.id) return;
+    const onPointerDown = (e) => {
+       if (composerRef.current && composerRef.current.contains(e.target)) return;
+       
+       const content = focusRef.current?.value?.trim();
+       if (content) {
+         onAddCard(list.id);
+       }
+       onCloseComposer();
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [activeComposer, list.id, onCloseComposer, onAddCard]);
+
+  useEffect(() => {
+    if (activeComposer === list.id) {
+       requestAnimationFrame(() => {
+          focusRef.current?.focus();
+       });
+    }
+  }, [activeComposer, list.id]);
 
   useEffect(() => {
     if (!isEditing) return;
@@ -125,9 +154,9 @@ const ListColumn = ({
       ref={setColumnNodeRef}
       className={`relative flex h-fit max-h-full w-[280px] shrink-0 flex-col rounded-xl border border-white/10 bg-slate-900/55 text-slate-100 shadow-[0_16px_36px_rgba(4,6,12,0.55)] animate-[list-in_0.5s_ease_both] ${
         isDragging
-          ? "opacity-50 scale-105 rotate-1 shadow-[0_24px_48px_rgba(4,6,12,0.75)] z-50 cursor-grabbing"
-          : "opacity-100 scale-100 rotate-0 cursor-grab"
-      }`}
+          ? "opacity-50 scale-105 rotate-1 shadow-[0_24px_48px_rgba(4,6,12,0.75)] z-50"
+          : "opacity-100 scale-100 rotate-0"
+      } ${isMenuOpen ? "z-40" : "z-0"}`}
       style={{
         animationDelay: `${listIndex * 120}ms`,
         ...style,
@@ -175,9 +204,21 @@ const ListColumn = ({
         </button>
       </div>
 
-      {isMenuOpen ? <ListMenu onClose={onCloseMenu} /> : null}
+      {isMenuOpen ? (
+        <ListMenu
+          onClose={onCloseMenu}
+          onAddCard={() => {
+             onOpenComposer(list.id);
+             onCloseMenu();
+          }}
+          onCopyList={onCopyList}
+          onDeleteList={onDeleteList}
+          onClearList={onClearList}
+        />
+      ) : null}
 
       <OverlayScrollbarsComponent
+        ref={scrollbarRef}
         className="min-h-0 flex-1 px-2.5"
         options={{
           overflow: { y: "scroll", x: "hidden" },
@@ -189,10 +230,7 @@ const ListColumn = ({
           className={`space-y-3 overflow-x-hidden rounded-lg transition-colors duration-200 ${
             isOver ? "bg-white/5" : ""
           }`}
-          ref={(node) => {
-            listBodyRef.current = node;
-            setCardsDropRef(node);
-          }}
+          ref={setCardsDropRef}
         >
           <SortableContext
             items={list.cards.map((card) => `card-${card.id}`)}
@@ -213,8 +251,9 @@ const ListColumn = ({
       </OverlayScrollbarsComponent>
 
       {activeComposer === list.id ? (
-        <div className="mt-3 grid gap-2 px-2.5 pb-3">
+        <div ref={composerRef} className="mt-3 grid gap-2 px-2.5 pb-3">
           <textarea
+            ref={focusRef}
             className="min-h-[60px] resize-y rounded-xl border border-white/10 bg-white/15 p-2 text-sm text-slate-100 outline-none focus:border-white/30 placeholder:text-slate-400"
             value={draftCard}
             onChange={(event) => onDraftChange(event.target.value)}
@@ -227,7 +266,12 @@ const ListColumn = ({
               variant="solid"
               className="px-3 py-1.5 text-sm"
               type="button"
-              onClick={() => onAddCard(list.id)}
+              onClick={() => {
+                onAddCard(list.id);
+                requestAnimationFrame(() => {
+                   focusRef.current?.focus();
+                });
+              }}
             >
               Add card
             </Button>

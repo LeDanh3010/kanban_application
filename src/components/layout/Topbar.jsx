@@ -1,5 +1,5 @@
 import React from "react";
-import Button from "./ui/Button.jsx";
+import Button from "../ui/Button.jsx";
 
 const Topbar = ({ title = "Kanban", onBack }) => {
   return (
