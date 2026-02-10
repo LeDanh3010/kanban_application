@@ -1,23 +1,27 @@
 import { createBrowserRouter, redirect, useLoaderData, useNavigate, useSubmit, useRouteLoaderData, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import App, { rootLoader } from "../App";
+import rootLoader from "../loaders/rootLoader";
+import MainLayout from "../layouts/MainLayout";
+import App from "../App";
 import BoardsHome from "../pages/BoardsHome";
 import LoginPage, { loginAction } from "../pages/LoginPage";
 import AdminPage from "../pages/AdminPage";
 import ActivityPage from "../pages/ActivityPage";
-import CardsPage from "../pages/CardsPage";
-import BoardView from "../pages/BoardView";
+import CardsPage from "../pages/CardsPage";import BoardView from "../pages/BoardView";
 import { authProvider } from "../utils/auth";
 import { getBoards, getBoard, createBoard, updateBoardLists } from "../utils/data";
 
 export const router = createBrowserRouter([
   {
-    path: "/",
-    element: <App />,
-    loader: rootLoader,
-    id: "root",
-    shouldRevalidate: () => false,
-    children: [
+    element:<App />,
+    children:[
+      {
+        path: "/",
+        element: <MainLayout/>,
+        loader: rootLoader,
+        id: "root",
+        shouldRevalidate: () => false,
+        children: [
       {
         index: true,
         element: <BoardsHomeWrapper />,
@@ -52,6 +56,9 @@ export const router = createBrowserRouter([
         },
       },
     ],
+      }
+    ]
+    
   },
   {
     path: "/login",

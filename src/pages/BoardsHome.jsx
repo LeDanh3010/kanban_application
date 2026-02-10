@@ -1,4 +1,4 @@
-import { useState } from "react";
+  import { useState } from "react";
 import Topbar from "../components/layout/Topbar.jsx";
 import BoardCard from "../components/board/BoardCard.jsx";
 import CreateBoardModal from "../components/board/CreateBoardModal.jsx";
@@ -14,6 +14,7 @@ const BoardsHome = ({ boards, onOpenBoard, onCreateBoard, user, onLogout, onGoTo
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
             <div>
+
               <h1 className="text-lg font-semibold text-slate-100">
                 Your Workspace
               </h1>
