@@ -5,7 +5,7 @@ import "overlayscrollbars/overlayscrollbars.css";
 import { useNavigate } from "react-router-dom";
 import { FaLink, FaChevronDown, FaTimes, FaUserPlus } from "react-icons/fa";
 
-const Topbar = ({ title = "Kanban", onBack, onLogout }) => {
+const Topbar = ({ title = "Kanban", onBack, onLogout, page }) => {
   const navigate = useNavigate();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
@@ -124,7 +124,7 @@ const Topbar = ({ title = "Kanban", onBack, onLogout }) => {
 
       <div className="flex items-center justify-end gap-3">
         {/* Share Button & Dropdown */}
-        <div className="relative hidden sm:block" ref={shareRef}>
+        {page === "viewBoard" && ( <div className="relative hidden sm:block" ref={shareRef}>
           <Button 
             variant="ghost" 
             className={`px-4 py-2 text-sm border transition-all ${isShareOpen ? 'bg-white/10 border-white/20 text-white' : 'border-white/5 hover:bg-white/5'}`}
@@ -203,7 +203,8 @@ const Topbar = ({ title = "Kanban", onBack, onLogout }) => {
                 </div>
              </div>
           )}
-        </div>
+        </div>)}
+         
 
         <div className="flex items-center gap-2">
           {/* Notifications Dropdown */}

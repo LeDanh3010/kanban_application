@@ -302,7 +302,7 @@ const BoardView = ({
       <div className="absolute inset-0 noise-overlay opacity-[0.07]" />
       
       <div className="relative z-10 flex h-screen flex-col">
-        <Topbar title={board.title} onBack={onBack} onLogout={onLogout} />
+        <Topbar title={board.title} onBack={onBack} onLogout={onLogout} page="viewBoard"/>
 
         <DndContext
           sensors={sensors}

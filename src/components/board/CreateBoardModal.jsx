@@ -10,8 +10,7 @@ const CreateBoardModal = ({ onClose, onCreate }) => {
   const [touched, setTouched] = useState(false);
 
   const accent = useMemo(() => {
-    const index = Math.abs(title.trim().length) % accentOptions.length;
-    return accentOptions[index];
+    return accentOptions[title.trim().length % accentOptions.length];
   }, [title]);
 
   useEffect(() => {
