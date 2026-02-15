@@ -1,0 +1,268 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////////
+
+enum GlobalRole {
+  admin
+  user
+}
+
+enum BoardRole {
+  owner
+  editor
+  viewer
+}
+
+enum ActivityAction {
+  created
+  updated
+  moved
+  deleted
+  assigned
+  commented
+}
+
+//////////////////////////////////////////////////////////
+// USER
+//////////////////////////////////////////////////////////
+
+model User {
+  id           Int       @id @default(autoincrement())
+  username     String    @unique
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  role         GlobalRole @default(user)
+
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  boardMemberships BoardMember[]
+  cardMemberships  CardMember[]
+  comments         Comment[]
+  activities       ActivityLog[]
+
+  @@map("users")
+}
+
+//////////////////////////////////////////////////////////
+// BOARD
+//////////////////////////////////////////////////////////
+
+model Board {
+  id        Int      @id @default(autoincrement())
+  title     String
+  accent    String   @default("sun")
+  coverUrl  String?  @map("cover_url")
+  position  Int      @default(0)
+  archived  Boolean  @default(false)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  members BoardMember[]
+  lists   List[]
+  labels  Label[]
+  activities ActivityLog[]
+
+  @@map("boards")
+}
+
+//////////////////////////////////////////////////////////
+// BOARD MEMBER (M-N)
+//////////////////////////////////////////////////////////
+
+model BoardMember {
+  id      Int       @id @default(autoincrement())
+  role    BoardRole @default(editor)
+
+  userId  Int       @map("user_id")
+  boardId Int       @map("board_id")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, boardId])
+  @@index([boardId])
+  @@map("board_members")
+}
+
+//////////////////////////////////////////////////////////
+// LIST
+//////////////////////////////////////////////////////////
+
+model List {
+  id       Int     @id @default(autoincrement())
+  title    String
+  accent   String  @default("sun")
+  position Int     @default(0)
+  archived Boolean @default(false)
+
+  boardId Int   @map("board_id")
+  board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  cards Card[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([boardId])
+  @@map("lists")
+}
+
+//////////////////////////////////////////////////////////
+// CARD
+//////////////////////////////////////////////////////////
+
+model Card {
+  id        Int      @id @default(autoincrement())
+  title     String
+  description String?
+  dueDate   DateTime? @map("due_date")
+  position  Int      @default(0)
+  completed Boolean  @default(false)
+  archived  Boolean  @default(false)
+
+  listId Int  @map("list_id")
+  list   List @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  members    CardMember[]
+  labels     CardLabel[]
+  comments   Comment[]
+  checklists Checklist[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([listId])
+  @@map("cards")
+}
+
+//////////////////////////////////////////////////////////
+// CARD MEMBER (M-N)
+//////////////////////////////////////////////////////////
+
+model CardMember {
+  cardId Int @map("card_id")
+  userId Int @map("user_id")
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, userId])
+  @@map("card_members")
+}
+
+//////////////////////////////////////////////////////////
+// LABEL
+//////////////////////////////////////////////////////////
+
+model Label {
+  id      Int    @id @default(autoincrement())
+  name    String
+  color   String
+
+  boardId Int   @map("board_id")
+  board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  cards CardLabel[]
+
+  @@index([boardId])
+  @@map("labels")
+}
+
+//////////////////////////////////////////////////////////
+// CARD LABEL (M-N)
+//////////////////////////////////////////////////////////
+
+model CardLabel {
+  cardId  Int @map("card_id")
+  labelId Int @map("label_id")
+
+  card  Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  label Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, labelId])
+  @@map("card_labels")
+}
+
+//////////////////////////////////////////////////////////
+// COMMENT
+//////////////////////////////////////////////////////////
+
+model Comment {
+  id      Int      @id @default(autoincrement())
+  content String
+  edited  Boolean  @default(false)
+
+  userId Int  @map("user_id")
+  cardId Int  @map("card_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([cardId])
+  @@map("comments")
+}
+
+//////////////////////////////////////////////////////////
+// CHECKLIST
+//////////////////////////////////////////////////////////
+
+model Checklist {
+  id       Int    @id @default(autoincrement())
+  title    String
+  position Int    @default(0)
+
+  cardId Int  @map("card_id")
+  card   Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  items ChecklistItem[]
+
+  @@map("checklists")
+}
+
+model ChecklistItem {
+  id        Int     @id @default(autoincrement())
+  title     String
+  isChecked Boolean @default(false)
+  position  Int     @default(0)
+
+  checklistId Int       @map("checklist_id")
+  checklist   Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+
+  @@index([checklistId])
+  @@map("checklist_items")
+}
+
+//////////////////////////////////////////////////////////
+// ACTIVITY LOG
+//////////////////////////////////////////////////////////
+
+model ActivityLog {
+  id      Int            @id @default(autoincrement())
+  action  ActivityAction
+  detail  String?
+
+  userId  Int  @map("user_id")
+  boardId Int  @map("board_id")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([boardId])
+  @@map("activity_logs")
+}

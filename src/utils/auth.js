@@ -9,11 +9,11 @@ export const authProvider = {
     // Mock validation
     let user = null;
     if (username === "admin" && password === "admin") {
-      user = { name: "Admin User", role: "admin", username };
+      user = {username, role: "admin"};
     } else if (username === "leader" && password === "leader") {
-      user = { name: "Leader User", role: "leader", username };
+      user = {username, role: "leader"};
     } else if (username === "user" && password === "user") {
-      user = { name: "Normal User", role: "user", username };
+      user = {username, role: "user"};
     }
 
     if (user) {

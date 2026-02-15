@@ -50,7 +50,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
   const handleOpenAddModal = () => {
     setModalMode('add');
     setEditingUser(null);
-    setFormData({ name: "", role: "User", password: "" });
+    setFormData({ username: "", role: "User", password: "" });
     setIsUserModalOpen(true);
   };
 
@@ -59,7 +59,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
     setModalMode('edit');
     setEditingUser(user);
     setFormData({
-      name: user.name,
+      username: user.username,
       role: user.role,
       password: "",
     });
@@ -84,7 +84,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
       setUsers((prevUsers) =>
         prevUsers.map((user) =>
           user.id === editingUser.id
-            ? { ...user, name: formData.name, role: formData.role }
+            ? { ...user, username: formData.username, role: formData.role }
             : user
         )
       );
@@ -92,7 +92,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
       // Add new user
       const newUser = {
         id: users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1,
-        name: formData.name,
+        username: formData.username,
         role: formData.role,
         status: "Active",
       };
@@ -102,14 +102,14 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
     // Close modal and reset form
     setIsUserModalOpen(false);
     setEditingUser(null);
-    setFormData({ name: "", role: "User", password: "" });
+    setFormData({ username: "", role: "User", password: "" });
   };
 
   // Handle closing modal
   const handleCloseModal = () => {
     setIsUserModalOpen(false);
     setEditingUser(null);
-    setFormData({ name: "", role: "User", password: "" });
+    setFormData({ username: "", role: "User", password: "" });
   };
 
   // Handle opening delete confirmation
@@ -302,14 +302,14 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
                         <div className="flex items-center gap-3">
                           <div className="relative shrink-0">
                             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white shadow-lg">
-                              {user.name.charAt(0)}
+                              {user.username.charAt(0)}
                             </div>
                             {user.status === "Active" && (
                               <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-slate-900" />
                             )}
                           </div>
                           <div>
-                            <div className="font-semibold text-white">{user.name}</div>
+                            <div className="font-semibold text-white">{user.username}</div>
                           </div>
                         </div>
                       </td>
@@ -400,8 +400,8 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
             <div>
               <label className="block text-sm text-slate-300 mb-2">User Name</label>
               <input
-                name="name"
-                value={formData.name}
+                name="username"
+                value={formData.username}
                 onChange={handleInputChange}
                 required
                 className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
@@ -473,7 +473,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
           {/* Simple Confirmation Dialog */}
           <div className="relative bg-slate-900 rounded-lg border border-white/10 shadow-2xl p-6 max-w-sm w-full animate-scaleIn">
             <p className="text-white text-center mb-6">
-              Are you sure you want to delete <span className="font-semibold text-rose-400">{userToDelete?.name}</span>?
+              Are you sure you want to delete <span className="font-semibold text-rose-400">{userToDelete?.username}</span>?
             </p>
             
             {/* Yes/No Buttons */}

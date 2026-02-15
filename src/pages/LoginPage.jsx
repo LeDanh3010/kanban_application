@@ -14,7 +14,7 @@ export const loginAction = async ({ request }) => {
 
   const user = await authProvider.signin(username, password);
   if (!user) {
-    return { error: "Invalid credentials. Try admin/admin, leader/leader, or user/user" };
+    return { error: "Username or password is incorrect" };
   }
 
   return redirect("/");

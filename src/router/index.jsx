@@ -129,6 +129,8 @@ function BoardViewWrapper() {
   const submit = useSubmit();
 
   const [board, setBoard] = useState(initialBoard);
+  console.log(board);
+  console.log(boards);
 
   useEffect(() => {
     setBoard(initialBoard);
@@ -136,6 +138,7 @@ function BoardViewWrapper() {
 
   const handleUpdateLists = async (updater) => {
     const newLists = typeof updater === 'function' ? updater(board.lists) : updater;
+    console.log(newLists);
     const nextBoard = { ...board, lists: newLists };
     setBoard(nextBoard);
     await updateBoardLists(board.id, newLists);

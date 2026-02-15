@@ -5,7 +5,6 @@ import CreateBoardModal from "../components/board/CreateBoardModal.jsx";
 
 const BoardsHome = ({ boards, onOpenBoard, onCreateBoard, user, onLogout, onGoToAdmin }) => {
   const [isCreating, setIsCreating] = useState(false);
-  console.log(onGoToAdmin);
   return (
     <div className="h-screen w-screen overflow-hidden bg-slate-950 text-slate-100">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.16),_rgba(15,23,42,0.2)_35%,_rgba(2,6,23,0.9)_75%)]" />
@@ -18,7 +17,7 @@ const BoardsHome = ({ boards, onOpenBoard, onCreateBoard, user, onLogout, onGoTo
               <h1 className="text-lg font-semibold text-slate-100">
                 Your Workspace
               </h1>
-              {user && <p className="text-sm text-slate-400">Welcome, {user.name}</p>}
+              {user && <p className="text-sm text-slate-400">Welcome, {user.username}</p>}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
