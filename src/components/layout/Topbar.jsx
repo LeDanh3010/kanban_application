@@ -10,6 +10,9 @@ const Topbar = ({ title = "Kanban", onBack, onLogout, page }) => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(title);
+  const inputRef = useRef(null);
   const dropdownRef = useRef(null);
   const accountRef = useRef(null);
   const shareRef = useRef(null);
@@ -83,10 +86,45 @@ const Topbar = ({ title = "Kanban", onBack, onLogout, page }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!isEditingTitle) return;
+    requestAnimationFrame(()=>{
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    })
+    const handleKey = (e) => {
+      if (e.key === 'Enter') handleCloseTitleEdit();
+      if (e.key === 'Escape') handleCloseTitleEdit();
+
+    }
+    const onPointerDown = (e) => {
+      if (inputRef.current && !inputRef.current.contains(e.target)) {
+        handleCloseTitleEdit();
+      }
+    }
+    document.addEventListener('keydown', handleKey);
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+      document.removeEventListener('pointerdown', onPointerDown);
+    }
+  }, [isEditingTitle]);
+
+ useEffect(() => {
+  if (inputRef.current) {
+    const input = inputRef.current;
+
+    input.style.width = "0px"; 
+    input.style.width = input.scrollWidth + "px";
+  }
+}, [draftTitle, isEditingTitle]);
   const markAllAsRead = () => {
     setNotifications(notifications.map((n) => ({ ...n, unread: false })));
   };
-
+ const handleCloseTitleEdit = () => {
+  setIsEditingTitle(false);
+  setDraftTitle(title);
+ };
   return (
     <header className="flex flex-col gap-4 bg-slate-900/60 backdrop-blur-md border-b border-white/5 p-3 text-slate-100 lg:flex-row lg:items-center lg:justify-between sticky top-0 z-50">
       <div className="flex items-center gap-4">
@@ -103,10 +141,32 @@ const Topbar = ({ title = "Kanban", onBack, onLogout, page }) => {
           </button>
         ) : null}
         <div>
-          <p className="text-lg font-bold tracking-tight text-white drop-shadow-sm">
+  {page === "viewBoard" ? isEditingTitle ? (
+    <input
+      ref={inputRef}
+      type="text"
+      value={draftTitle}
+      onChange={(e) => setDraftTitle(e.target.value)}
+      onBlur={handleCloseTitleEdit}
+      className="text-lg font-bold tracking-tight text-white 
+             drop-shadow-sm border bg-transparent outline-none 
+             px-2 py-1"
+      style={{ minWidth: "50px" }}
+      autoFocus
+    />
+  ) : (
+    <p
+      className="text-lg font-bold tracking-tight text-white drop-shadow-sm cursor-pointer hover:bg-white/10 rounded-md px-2 py-1 transition-colors"
+      onClick={() => setIsEditingTitle(true)}
+    >
+      {title}
+    </p>
+  ) : (
+    <p className="text-lg font-bold tracking-tight text-white drop-shadow-sm">
             {title}
           </p>
-        </div>
+  ) }
+</div>
       </div>
 
       <div className="relative group flex-1 max-w-xl mx-4 lg:mx-8">
