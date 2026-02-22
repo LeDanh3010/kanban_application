@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 //////////////////////////////////////////////////////////
@@ -40,9 +39,9 @@ enum ActivityAction {
 model User {
   id           Int       @id @default(autoincrement())
   username     String    @unique
-  email        String    @unique
   passwordHash String    @map("password_hash")
   role         GlobalRole @default(user)
+  firstLogin   Boolean   @default(true) @map("first_login")
 
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
@@ -51,8 +50,28 @@ model User {
   cardMemberships  CardMember[]
   comments         Comment[]
   activities       ActivityLog[]
+  refreshTokens    RefreshToken[]
 
   @@map("users")
+}
+
+//////////////////////////////////////////////////////////
+// REFRESH TOKEN
+//////////////////////////////////////////////////////////
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  revoked   Boolean  @default(false)
+
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("refresh_tokens")
 }
 
 //////////////////////////////////////////////////////////
