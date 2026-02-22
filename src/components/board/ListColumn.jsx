@@ -30,6 +30,8 @@ const ListColumn = ({
   onCopyList,
   onDeleteList,
   onClearList,
+  onRenameCard,
+  onArchiveCard,
 }) => {
   const scrollbarRef = useRef(null);
   const prevCountRef = useRef(list.cards.length);
@@ -243,6 +245,8 @@ const ListColumn = ({
                 key={card.id}
                 onOpen={(next) => onOpenCard?.(next, list)}
                 onToggle={() => onToggleCard?.(list.id, card.id)}
+                onRename={(cardId, title) => onRenameCard?.(list.id, cardId, title)}
+                onArchive={(cardId) => onArchiveCard?.(list.id, cardId)}
                 listId={list.id}
               />
             ))}

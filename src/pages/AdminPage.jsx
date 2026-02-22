@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Fade as Hamburger } from "hamburger-react";
 import { Sidebar, Menu, MenuItem } from "react-pro-sidebar";
+import {users as initialUsers} from "../data/users";
 import {
   FaHome,
   FaSignOutAlt,
@@ -13,13 +14,7 @@ import Button from "../components/ui/Button";
 
 const AdminPage = ({ onLogout, onNavigateHome }) => {
   const [collapsed, setCollapsed] = useState(true);
-  const [users, setUsers] = useState([
-    { id: 1, name: "中田",role: "Admin", status: "Active" },
-    { id: 2, name: "山田", role: "Leader", status: "Active" },
-    { id: 3, name: "徳田", role: "User", status: "Offline" },
-    { id: 4, name: "愛知", role: "User", status: "Active" },
-    { id: 5, name: "竹下", role: "User", status: "Active" },
-  ]);
+  const [users, setUsers] = useState(initialUsers);
   
   // Unified User Form Modal state
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -50,7 +45,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
   const handleOpenAddModal = () => {
     setModalMode('add');
     setEditingUser(null);
-    setFormData({ username: "", role: "User", password: "" });
+    setFormData({ name: "", role: "User", password: "" });
     setIsUserModalOpen(true);
   };
 
@@ -59,7 +54,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
     setModalMode('edit');
     setEditingUser(user);
     setFormData({
-      username: user.username,
+      name: user.name,
       role: user.role,
       password: "",
     });
@@ -84,7 +79,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
       setUsers((prevUsers) =>
         prevUsers.map((user) =>
           user.id === editingUser.id
-            ? { ...user, username: formData.username, role: formData.role }
+            ? { ...user, name: formData.name, role: formData.role }
             : user
         )
       );
@@ -92,7 +87,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
       // Add new user
       const newUser = {
         id: users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1,
-        username: formData.username,
+        name: formData.name,
         role: formData.role,
         status: "Active",
       };
@@ -102,14 +97,14 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
     // Close modal and reset form
     setIsUserModalOpen(false);
     setEditingUser(null);
-    setFormData({ username: "", role: "User", password: "" });
+    setFormData({ name: "", role: "User", password: "" });
   };
 
   // Handle closing modal
   const handleCloseModal = () => {
     setIsUserModalOpen(false);
     setEditingUser(null);
-    setFormData({ username: "", role: "User", password: "" });
+    setFormData({ name: "", role: "User", password: "" });
   };
 
   // Handle opening delete confirmation
@@ -302,14 +297,14 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
                         <div className="flex items-center gap-3">
                           <div className="relative shrink-0">
                             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white shadow-lg">
-                              {user.username.charAt(0)}
+                              {(user.name ?? "?").charAt(0)}
                             </div>
                             {user.status === "Active" && (
                               <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-slate-900" />
                             )}
                           </div>
                           <div>
-                            <div className="font-semibold text-white">{user.username}</div>
+                            <div className="font-semibold text-white">{user.name}</div>
                           </div>
                         </div>
                       </td>
@@ -400,8 +395,8 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
             <div>
               <label className="block text-sm text-slate-300 mb-2">User Name</label>
               <input
-                name="username"
-                value={formData.username}
+                name="name"
+                value={formData.name}
                 onChange={handleInputChange}
                 required
                 className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
@@ -473,7 +468,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
           {/* Simple Confirmation Dialog */}
           <div className="relative bg-slate-900 rounded-lg border border-white/10 shadow-2xl p-6 max-w-sm w-full animate-scaleIn">
             <p className="text-white text-center mb-6">
-              Are you sure you want to delete <span className="font-semibold text-rose-400">{userToDelete?.username}</span>?
+              Are you sure you want to delete <span className="font-semibold text-rose-400">{userToDelete?.name}</span>?
             </p>
             
             {/* Yes/No Buttons */}

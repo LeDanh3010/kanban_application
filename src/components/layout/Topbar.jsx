@@ -5,7 +5,7 @@ import "overlayscrollbars/overlayscrollbars.css";
 import { useNavigate } from "react-router-dom";
 import { FaLink, FaChevronDown, FaTimes, FaUserPlus } from "react-icons/fa";
 
-const Topbar = ({ title = "Kanban", onBack, onLogout, page }) => {
+const Topbar = ({ title = "Kanban", onBack, onLogout, onTitleChange, page,user }) => {
   const navigate = useNavigate();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
@@ -13,10 +13,10 @@ const Topbar = ({ title = "Kanban", onBack, onLogout, page }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [draftTitle, setDraftTitle] = useState(title);
   const inputRef = useRef(null);
+  const spanRef = useRef(null);
   const dropdownRef = useRef(null);
   const accountRef = useRef(null);
   const shareRef = useRef(null);
-
   // Mock Notifications (same as before...)
   const [notifications, setNotifications] = useState([
     // ... existing notifications
@@ -68,7 +68,7 @@ const Topbar = ({ title = "Kanban", onBack, onLogout, page }) => {
   ]);
 
   const unreadCount = notifications.filter((n) => n.unread).length;
-
+console.log(user)
   // Close dropdowns on click outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -86,51 +86,77 @@ const Topbar = ({ title = "Kanban", onBack, onLogout, page }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Sync draftTitle when the title prop changes (e.g. from parent)
+  useEffect(() => {
+    setDraftTitle(title);
+  }, [title]);
+
+  // Keep a ref to always have latest values in event listeners (avoids stale closure)
+  const draftTitleRef = useRef(draftTitle);
+  const titleRef = useRef(title);
+  const onTitleChangeRef = useRef(onTitleChange);
+  useEffect(() => { draftTitleRef.current = draftTitle; }, [draftTitle]);
+  useEffect(() => { titleRef.current = title; }, [title]);
+  useEffect(() => { onTitleChangeRef.current = onTitleChange; }, [onTitleChange]);
+
+  const handleSaveTitle = () => {
+    setIsEditingTitle(false);
+    const trimmed = draftTitleRef.current.trim();
+    if (trimmed && trimmed !== titleRef.current && onTitleChangeRef.current) {
+      onTitleChangeRef.current(trimmed);
+    } else {
+      setDraftTitle(titleRef.current);
+    }
+  };
+
+  const handleCancelTitleEdit = () => {
+    setIsEditingTitle(false);
+    setDraftTitle(titleRef.current);
+  };
+
+  // Register keyboard/pointer listeners only when editing starts
   useEffect(() => {
     if (!isEditingTitle) return;
-    requestAnimationFrame(()=>{
+    requestAnimationFrame(() => {
       inputRef.current?.focus();
       inputRef.current?.select();
-    })
+    });
     const handleKey = (e) => {
-      if (e.key === 'Enter') handleCloseTitleEdit();
-      if (e.key === 'Escape') handleCloseTitleEdit();
-
-    }
+      if (e.key === 'Enter') { e.preventDefault(); handleSaveTitle(); }
+      if (e.key === 'Escape') { e.preventDefault(); handleCancelTitleEdit(); }
+    };
     const onPointerDown = (e) => {
       if (inputRef.current && !inputRef.current.contains(e.target)) {
-        handleCloseTitleEdit();
+        handleSaveTitle();
       }
-    }
+    };
     document.addEventListener('keydown', handleKey);
     document.addEventListener('pointerdown', onPointerDown);
     return () => {
       document.removeEventListener('keydown', handleKey);
       document.removeEventListener('pointerdown', onPointerDown);
-    }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditingTitle]);
 
- useEffect(() => {
-  if (inputRef.current) {
-    const input = inputRef.current;
 
-    input.style.width = "0px"; 
-    input.style.width = input.scrollWidth + "px";
-  }
-}, [draftTitle, isEditingTitle]);
+  // Auto-resize input width to match typed content
+  useEffect(() => {
+    if (!isEditingTitle || !spanRef.current || !inputRef.current) return;
+    const spanWidth = spanRef.current.offsetWidth;
+    inputRef.current.style.width = Math.max(60, spanWidth) + "px";
+  }, [draftTitle, isEditingTitle]);
+
   const markAllAsRead = () => {
     setNotifications(notifications.map((n) => ({ ...n, unread: false })));
   };
- const handleCloseTitleEdit = () => {
-  setIsEditingTitle(false);
-  setDraftTitle(title);
- };
   return (
-    <header className="flex flex-col gap-4 bg-slate-900/60 backdrop-blur-md border-b border-white/5 p-3 text-slate-100 lg:flex-row lg:items-center lg:justify-between sticky top-0 z-50">
-      <div className="flex items-center gap-4">
+    <header className="grid grid-cols-1 gap-3 bg-slate-900/60 backdrop-blur-md border-b border-white/5 p-3 text-slate-100 lg:grid-cols-[280px_1fr_auto] lg:items-center sticky top-0 z-50">
+      {/* LEFT: fixed 280px grid column — input can grow inside but grid keeps searchbar anchored */}
+      <div className="flex items-center gap-2 min-w-0 overflow-hidden">
         {onBack ? (
           <button
-            className="grid cursor-pointer h-9 w-9 place-items-center rounded-full border border-slate-700 bg-slate-900 text-slate-200 shadow-[0_8px_18px_rgba(15,16,20,0.35)] hover:border-slate-500 transition-all"
+            className="grid cursor-pointer h-9 w-9 place-items-center rounded-full border border-slate-700 bg-slate-900 text-slate-200 shadow-[0_8px_18px_rgba(15,16,20,0.35)] hover:border-slate-500 transition-all shrink-0"
             type="button"
             onClick={onBack}
             aria-label="Back to boards"
@@ -140,36 +166,57 @@ const Topbar = ({ title = "Kanban", onBack, onLogout, page }) => {
             </svg>
           </button>
         ) : null}
-        <div>
-  {page === "viewBoard" ? isEditingTitle ? (
-    <input
-      ref={inputRef}
-      type="text"
-      value={draftTitle}
-      onChange={(e) => setDraftTitle(e.target.value)}
-      onBlur={handleCloseTitleEdit}
-      className="text-lg font-bold tracking-tight text-white 
-             drop-shadow-sm border bg-transparent outline-none 
-             px-2 py-1"
-      style={{ minWidth: "50px" }}
-      autoFocus
-    />
-  ) : (
-    <p
-      className="text-lg font-bold tracking-tight text-white drop-shadow-sm cursor-pointer hover:bg-white/10 rounded-md px-2 py-1 transition-colors"
-      onClick={() => setIsEditingTitle(true)}
-    >
-      {title}
-    </p>
-  ) : (
-    <p className="text-lg font-bold tracking-tight text-white drop-shadow-sm">
-            {title}
-          </p>
-  ) }
-</div>
+        <div className="min-w-0 overflow-hidden max-w-[280px]">
+          {/* Hidden span used to measure text width for input auto-resize */}
+          {isEditingTitle && (
+            <span
+              ref={spanRef}
+              aria-hidden="true"
+              style={{
+                position: "fixed",
+                top: "-9999px",
+                left: "-9999px",
+                visibility: "hidden",
+                whiteSpace: "pre",
+                fontSize: "1.125rem",
+                fontWeight: "700",
+                letterSpacing: "-0.025em",
+                padding: "0.25rem 0.5rem",
+              }}
+            >
+              {draftTitle || " "}
+            </span>
+          )}
+
+          {page === "viewBoard" ? isEditingTitle ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={draftTitle}
+              onChange={(e) => setDraftTitle(e.target.value)}
+              className="text-lg font-bold tracking-tight text-white
+                     drop-shadow-sm bg-white/10 rounded-md outline-none
+                     px-2 py-1"
+              style={{ minWidth: "60px", maxWidth: "280px" }}
+            />
+          ) : (
+            <p
+              className="text-lg font-bold tracking-tight text-white drop-shadow-sm cursor-pointer hover:bg-white/10 rounded-md px-2 py-1 transition-colors truncate"
+              onClick={() => setIsEditingTitle(true)}
+              title={title}
+            >
+              {title}
+            </p>
+          ) : (
+            <p className="text-lg font-bold tracking-tight text-white drop-shadow-sm truncate" title={title}>
+              {title}
+            </p>
+          )}
+        </div>
       </div>
 
-      <div className="relative group flex-1 max-w-xl mx-4 lg:mx-8">
+      {/* CENTER: 1fr grid cell keeps searchbar anchored; max-w-md caps its visual width */}
+      <div className="relative group w-full max-w-lg mx-auto min-w-0">
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -356,8 +403,8 @@ const Topbar = ({ title = "Kanban", onBack, onLogout, page }) => {
                       JL
                     </div>
                     <div className="flex flex-col">
-                      <p className="text-sm font-bold text-white">Jan Lee</p>
-                      <p className="text-[11px] text-slate-400 truncate">nguyenledanh19@gmail.com</p>
+                      <p className="text-sm font-bold text-white">{(user.username ?? "?").charAt(0).toUpperCase()}</p>
+                      <p className="text-[11px] text-slate-400 truncate">{user.role}</p>
                     </div>
                   </div>
                 </div>

@@ -9,7 +9,7 @@ import AdminPage from "../pages/AdminPage";
 import ActivityPage from "../pages/ActivityPage";
 import CardsPage from "../pages/CardsPage";import BoardView from "../pages/BoardView";
 import { authProvider } from "../utils/auth";
-import { getBoards, getBoard, createBoard, updateBoardLists } from "../utils/data";
+import { getBoards, getBoard, createBoard, updateBoardLists, updateBoardTitle } from "../utils/data";
 
 export const router = createBrowserRouter([
   {
@@ -129,8 +129,6 @@ function BoardViewWrapper() {
   const submit = useSubmit();
 
   const [board, setBoard] = useState(initialBoard);
-  console.log(board);
-  console.log(boards);
 
   useEffect(() => {
     setBoard(initialBoard);
@@ -138,10 +136,17 @@ function BoardViewWrapper() {
 
   const handleUpdateLists = async (updater) => {
     const newLists = typeof updater === 'function' ? updater(board.lists) : updater;
-    console.log(newLists);
     const nextBoard = { ...board, lists: newLists };
     setBoard(nextBoard);
     await updateBoardLists(board.id, newLists);
+  };
+
+  const handleUpdateBoardTitle = async (newTitle) => {
+    const trimmed = newTitle.trim();
+    if (!trimmed || trimmed === board.title) return;
+    const nextBoard = { ...board, title: trimmed };
+    setBoard(nextBoard);
+    await updateBoardTitle(board.id, trimmed);
   };
 
   return (
@@ -151,6 +156,7 @@ function BoardViewWrapper() {
       activeBoardId={board.id}
       onBack={() => navigate("/")}
       onUpdateLists={handleUpdateLists}
+      onUpdateBoardTitle={handleUpdateBoardTitle}
       onSwitchBoard={(id) => navigate(`/board/${id}`)}
       onLogout={() => submit(null, { action: "/logout", method: "post" })}
     />

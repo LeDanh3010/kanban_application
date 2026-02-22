@@ -13,7 +13,9 @@ datasource db {
 
 enum GlobalRole {
   admin
+  leader
   user
+  guest
 }
 
 enum BoardRole {

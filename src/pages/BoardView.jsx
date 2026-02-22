@@ -30,6 +30,7 @@ const BoardView = ({
   activeBoardId,
   onBack,
   onUpdateLists,
+  onUpdateBoardTitle,
   onSwitchBoard,
   onLogout,
 }) => {
@@ -137,6 +138,31 @@ const BoardView = ({
 
   const clearList = useCallback((listId) => {
       onUpdateLists(current => current.map(l => l.id === listId ? { ...l, cards: [] } : l));
+  }, [onUpdateLists]);
+
+  const renameCard = useCallback((listId, cardId, newTitle) => {
+    onUpdateLists((current) =>
+      current.map((list) =>
+        list.id === listId
+          ? {
+              ...list,
+              cards: list.cards.map((card) =>
+                card.id === cardId ? { ...card, title: newTitle } : card
+              ),
+            }
+          : list
+      )
+    );
+  }, [onUpdateLists]);
+
+  const archiveCard = useCallback((listId, cardId) => {
+    onUpdateLists((current) =>
+      current.map((list) =>
+        list.id === listId
+          ? { ...list, cards: list.cards.filter((card) => card.id !== cardId) }
+          : list
+      )
+    );
   }, [onUpdateLists]);
 
   // 3. Drag and Drop Logic
@@ -302,7 +328,7 @@ const BoardView = ({
       <div className="absolute inset-0 noise-overlay opacity-[0.07]" />
       
       <div className="relative z-10 flex h-screen flex-col">
-        <Topbar title={board.title} onBack={onBack} onLogout={onLogout} page="viewBoard"/>
+        <Topbar title={board.title} onBack={onBack} onLogout={onLogout} onTitleChange={onUpdateBoardTitle} page="viewBoard"/>
 
         <DndContext
           sensors={sensors}
@@ -368,6 +394,8 @@ const BoardView = ({
                       setActiveCard({ card, list: listInfo })
                     }
                     onToggleCard={toggleCard}
+                    onRenameCard={renameCard}
+                    onArchiveCard={archiveCard}
                   />
                 ))}
 

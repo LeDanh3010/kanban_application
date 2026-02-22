@@ -36,3 +36,12 @@ export async function updateBoardLists(boardId, newLists) {
   );
   return boards.find((b) => b.id === boardId);
 }
+
+// Async function to update a board's title
+export async function updateBoardTitle(boardId, newTitle) {
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  boards = boards.map((b) =>
+    b.id === boardId ? { ...b, title: newTitle } : b
+  );
+  return boards.find((b) => b.id === boardId);
+}

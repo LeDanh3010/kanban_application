@@ -65,11 +65,11 @@ const icons = {
 };
 
 const BottomTabs = ({ boards, activeBoardId, onSwitchBoard }) => {
-  const [activeTab, setActiveTab] = useState("");
+  const [activeTab, setActiveTab] = useState(boards?.length > 0 ? "board" : "switch");
   const [isSwitchOpen, setIsSwitchOpen] = useState(false);
   const tabs = [
     // { id: "inbox", label: "Inbox" },
-    { id: "planner", label: "Planner" },
+    // { id: "planner", label: "Planner" },
     { id: "board", label: "Board" },
     { id: "switch", label: "Switch boards" },
   ];

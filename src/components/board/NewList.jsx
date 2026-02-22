@@ -2,7 +2,7 @@ import Button from "../ui/Button.jsx";
 
 const NewList = ({ title, onTitleChange, onAddList }) => {
   return (
-    <section className="w-[280px] shrink-0 self-start rounded-xl border border-dashed border-white/15 bg-slate-900/70 p-4 text-slate-100 shadow-[0_8px_16px_rgba(4,6,12,0.4)]">
+    <section className="w-[280px] shrink-0 self-start rounded-xl border border border-white/15 bg-slate-900/70 p-4 text-slate-100 shadow-[0_8px_16px_rgba(4,6,12,0.4)]">
       <div className="grid gap-3">
         <div>
           <h2 className="text-sm font-semibold text-slate-200">
