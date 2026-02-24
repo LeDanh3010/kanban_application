@@ -73,23 +73,32 @@ class AuthController {
 
             //Generate tokens
             const accessToken = jwt.sign(payload,process.env.JWT_SECRET,{expiresIn:"15m"})
-            const refreshToken = jwt.sign(payload,process.env.JWT_SECRET,{expiresIn:"30d"})
+            const refreshToken = jwt.sign({id:user.id},process.env.JWT_REFRESH_SECRET,{expiresIn:"30d"})
 
             //Store refresh token
             await prisma.refreshToken.create({
                 data:{
                     token:refreshToken,
-                    userId:user.id
+                    userId:user.id,
+                    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
                 }
+            })
+            
+            res.cookie("refreshToken",refreshToken,{
+                httpOnly:true,
+                secure:false,
+                sameSite:"lax",
+                maxAge:30*24*60*60*1000,
+                path:"/api/auth"
             })
 
             return res.status(200).json({
                 accessToken,
-                refreshToken,
                 user:{
                     id:user.id,
                     username:user.username,
-                    role:user.role
+                    role:user.role,
+                    firstLogin:user.firstLogin
                 }
             })
         }catch(e){
@@ -100,7 +109,7 @@ class AuthController {
     /////////////////////refresh token
     async refreshToken(req,res){
         try{
-            const {refreshToken} =req.body;
+            const refreshToken = req.cookies.refreshToken;
             if(!refreshToken) return res.status(401).json({error:"Refresh token is not provided"})
             
             const stored = await prisma.refreshToken.findUnique({
@@ -146,13 +155,40 @@ class AuthController {
                 }
             })
 
+            res.cookie("refreshToken",newRefreshToken,{
+                httpOnly:true,
+                secure:false,
+                sameSite:"lax",
+                maxAge:30*24*60*60*1000,
+                path:"/api/auth"
+            })
+
             return res.status(200).json({
                 accessToken:newAccessToken,
-                refreshToken:newRefreshToken,
             })
             
         }catch(e){
             console.log(e)
+            return res.status(500).json({error:"Internal server error"})
+        }
+    }
+
+    async Logout(req,res){
+        try{
+            const refreshToken = req.cookies.refreshToken;
+            if(refreshToken) {
+                await prisma.refreshToken.updateMany({
+                    where:{
+                        token:refreshToken
+                    },
+                    data:{
+                        revoked:true
+                    }
+                })
+            }
+            res.clearCookie("refreshToken",{path:"/api/auth"})
+            return res.status(200).json({message:"Logout successfully"})
+        }catch(e){
             return res.status(500).json({error:"Internal server error"})
         }
     }
