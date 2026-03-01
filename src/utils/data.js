@@ -1,47 +1,98 @@
-import { initialBoards } from "../data/boards";
+import api from "./api";
 
-let boards = initialBoards;
+export async function registerUser(username,password,role){
+    const {data} = await api.post("/auth/register",{username,password,role});
+    return data;
+}
 
-// Async function to simulate fetching boards from API
+export async function deleteUser(userId){
+    await api.delete(`/users/${userId}`);
+}
+
+export async function updateUserRole(userId,role) {
+    const {data} = await api.put(`/users/${userId}/role`,{role});
+    return data;
+}
+
+export async function changePassword(newPassword){
+    const {data} = await api.put("/auth/change-password",{newPassword});
+    return data;
+}
+
 export async function getBoards() {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return boards;
+    const { data } = await api.get("/boards");
+    return data;
 }
 
-// Async function to simulate getting a single board
 export async function getBoard(id) {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  return boards.find((board) => board.id === id);
+    const { data } = await api.get(`/boards/${id}`);
+    return data;
 }
 
-// Async function to create a board
-export async function createBoard({ title, cover, accent }) {
-  await new Promise((resolve) => setTimeout(resolve, 300));
-  const newBoard = {
-    id: `b${Date.now()}`,
-    title,
-    cover,
-    accent,
-    lists: [],
-  };
-  boards = [newBoard, ...boards];
-  return newBoard;
+export async function createBoard({ title, accent, coverUrl }) {
+    const { data } = await api.post("/boards", { title, accent, coverUrl });
+    return data;
 }
 
-// Async function to update lists in a board
+export async function updateBoardTitle(boardId, title) {
+    const { data } = await api.put(`/boards/${boardId}`, { title });
+    return data;
+}
+
 export async function updateBoardLists(boardId, newLists) {
-  await new Promise((resolve) => setTimeout(resolve, 100));
-  boards = boards.map((b) =>
-    b.id === boardId ? { ...b, lists: newLists } : b
-  );
-  return boards.find((b) => b.id === boardId);
+    // Reorder: gửi orderedIds
+    const orderedIds = newLists.map(l => l.id);
+    await api.put(`/boards/${boardId}/lists/reorder`, { orderedIds });
 }
 
-// Async function to update a board's title
-export async function updateBoardTitle(boardId, newTitle) {
-  await new Promise((resolve) => setTimeout(resolve, 100));
-  boards = boards.map((b) =>
-    b.id === boardId ? { ...b, title: newTitle } : b
-  );
-  return boards.find((b) => b.id === boardId);
+export async function createList(boardId, title) {
+    const { data } = await api.post(`/boards/${boardId}/lists`, { title });
+    return data;
+}
+
+export async function updateList(listId, updates) {
+    const { data } = await api.put(`/lists/${listId}`, updates);
+    return data;
+}
+
+export async function deleteList(listId) {
+    await api.delete(`/lists/${listId}`);
+}
+
+export async function createCard(listId, title) {
+    const { data } = await api.post(`/lists/${listId}/cards`, { title });
+    return data;
+}
+
+export async function updateCard(cardId, updates) {
+    const { data } = await api.put(`/cards/${cardId}`, updates);
+    return data;
+}
+
+export async function deleteCard(cardId) {
+    await api.delete(`/cards/${cardId}`);
+}
+
+export async function reorderCards(cards) {
+    await api.put("/cards/reorder", { cards });
+}
+
+export async function getCard(cardId) {
+    const { data } = await api.get(`/cards/${cardId}`);
+    return data;
+}
+
+export async function addComment(cardId, content) {
+    const { data } = await api.post(`/cards/${cardId}/comments`, { content });
+    return data;
+}
+
+export async function shareBoard(boardId, userId, role) {
+    const { data } = await api.post(`/boards/${boardId}/share`, { userId, role });
+    return data;
+}
+
+export async function getUsers() {
+    const { data } = await api.get("/users");
+    return data;
 }

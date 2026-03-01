@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { Fade as Hamburger } from "hamburger-react";
 import { Sidebar, Menu, MenuItem } from "react-pro-sidebar";
-import {users as initialUsers} from "../data/users";
+import { getUsers, registerUser, updateUserRole, deleteUser } from "../utils/data";
+import { ClipLoader } from "react-spinners";
+
+
 import {
   FaHome,
   FaSignOutAlt,
@@ -14,17 +17,35 @@ import Button from "../components/ui/Button";
 
 const AdminPage = ({ onLogout, onNavigateHome }) => {
   const [collapsed, setCollapsed] = useState(true);
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(()=>{
+    const fetchUser = async()=>{
+      try{
+        setLoading(true);
+        const data = await getUsers();
+        setUsers(data);
+      }catch(e){
+        console.error("Error fetching users:", e);
+      }finally{
+        setLoading(false);
+      }
+    }
+    fetchUser();
+  },[])
   
   // Unified User Form Modal state
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
   const [editingUser, setEditingUser] = useState(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    role: "User",
+ const [formData, setFormData] = useState({
+    username: "",
+    role: "user",
     password: "",
-  });
+});
+
+
 
    // Delete confirmation modal state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -45,7 +66,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
   const handleOpenAddModal = () => {
     setModalMode('add');
     setEditingUser(null);
-    setFormData({ name: "", role: "User", password: "" });
+    setFormData({ username: "", role: "user", password: "" });
     setIsUserModalOpen(true);
   };
 
@@ -54,7 +75,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
     setModalMode('edit');
     setEditingUser(user);
     setFormData({
-      name: user.name,
+      username: user.username,
       role: user.role,
       password: "",
     });
@@ -71,40 +92,36 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
   };
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (modalMode === 'edit') {
-      // Update existing user
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user.id === editingUser.id
-            ? { ...user, name: formData.name, role: formData.role }
-            : user
-        )
-      );
-    } else {
-      // Add new user
-      const newUser = {
-        id: users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1,
-        name: formData.name,
-        role: formData.role,
-        status: "Active",
-      };
-      setUsers((prevUsers) => [...prevUsers, newUser]);
+    try {
+        if (modalMode === 'edit') {
+            // Update role via API
+            await updateUserRole(editingUser.id, formData.role);
+        } else {
+            // Register new user via API
+            await registerUser(formData.username, formData.password, formData.role);
+        }
+        // Refresh user list from API
+        const data = await getUsers();
+        setUsers(data);
+    } catch (err) {
+        console.error("Failed to save user:", err);
+        alert(err.response?.data?.error || "Operation failed");
     }
 
     // Close modal and reset form
     setIsUserModalOpen(false);
     setEditingUser(null);
-    setFormData({ name: "", role: "User", password: "" });
-  };
+    setFormData({ username: "", role: "user", password: "" });
+};
+
 
   // Handle closing modal
   const handleCloseModal = () => {
     setIsUserModalOpen(false);
     setEditingUser(null);
-    setFormData({ name: "", role: "User", password: "" });
+    setFormData({ username: "", role: "user", password: "" });
   };
 
   // Handle opening delete confirmation
@@ -114,11 +131,19 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
   };
 
   // Handle confirming delete
-  const handleConfirmDelete = () => {
-    setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userToDelete.id));
+  const handleConfirmDelete = async () => {
+    try {
+        await deleteUser(userToDelete.id);
+        const data = await getUsers();
+        setUsers(data);
+    } catch (err) {
+        console.error("Failed to delete user:", err);
+        alert(err.response?.data?.error || "Delete failed");
+    }
     setIsDeleteModalOpen(false);
     setUserToDelete(null);
-  };
+};
+
 
   // Handle canceling delete
   const handleCancelDelete = () => {
@@ -246,7 +271,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
                 <div>
                   <p className="text-sm font-medium text-slate-400">Admins</p>
                   <p className="mt-2 text-3xl font-bold text-white">
-                    {users.filter((u) => u.role === "Admin").length}
+                    {users.filter((u) => u.role === "admin").length}
                   </p>
                   <p className="mt-1 text-xs text-slate-400">Full access</p>
                 </div>
@@ -262,7 +287,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
                 <div>
                   <p className="text-sm font-medium text-slate-400">Leaders</p>
                   <p className="mt-2 text-3xl font-bold text-white">
-                    {users.filter((u) => u.role === "Leader").length}
+                    {users.filter((u) => u.role === "leader").length}
                   </p>
                   <p className="mt-1 text-xs text-slate-400">Team managers</p>
                 </div>
@@ -281,7 +306,12 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              {loading ? (
+              <div className="flex items-center justify-center py-16">
+                <ClipLoader color="#818cf8" size={40} />
+              </div>
+              ):(
+                <table className="w-full text-left text-sm">
                 <thead className="bg-white/5 text-xs uppercase tracking-wider text-slate-300 font-bold">
                   <tr>
                     <th className="px-6 py-4">User</th>
@@ -297,23 +327,23 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
                         <div className="flex items-center gap-3">
                           <div className="relative shrink-0">
                             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white shadow-lg">
-                              {(user.name ?? "?").charAt(0)}
+                              {(user.username ?? "?").charAt(0)}
                             </div>
                             {user.status === "Active" && (
                               <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-slate-900" />
                             )}
                           </div>
                           <div>
-                            <div className="font-semibold text-white">{user.name}</div>
+                            <div className="font-semibold text-white">{user.username}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${
-                            user.role === "Admin"
+                            user.role === "admin"
                               ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
-                              : user.role === "Leader"
+                              : user.role === "leader"
                               ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
                               : "bg-slate-500/20 text-slate-300 border border-slate-500/30"
                           }`}
@@ -359,6 +389,8 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
                   ))}
                 </tbody>
               </table>
+              )}
+              
             </div>
           </div>
         </div>
@@ -395,8 +427,8 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
             <div>
               <label className="block text-sm text-slate-300 mb-2">User Name</label>
               <input
-                name="name"
-                value={formData.name}
+                name="username"
+                value={formData.username}
                 onChange={handleInputChange}
                 required
                 className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
@@ -468,7 +500,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
           {/* Simple Confirmation Dialog */}
           <div className="relative bg-slate-900 rounded-lg border border-white/10 shadow-2xl p-6 max-w-sm w-full animate-scaleIn">
             <p className="text-white text-center mb-6">
-              Are you sure you want to delete <span className="font-semibold text-rose-400">{userToDelete?.name}</span>?
+              Are you sure you want to delete <span className="font-semibold text-rose-400">{userToDelete?.username}</span>?
             </p>
             
             {/* Yes/No Buttons */}

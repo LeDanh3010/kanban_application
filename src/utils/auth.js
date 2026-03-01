@@ -1,48 +1,37 @@
+import api, { setAccessToken } from "./api";
+
 export const authProvider = {
-  isAuthenticated: false,
-  username: null,
-  role: null,
-  
-  async signin(username, password) {
-    await new Promise((r) => setTimeout(r, 500)); // fake delay
-    
-    // Mock validation
-    let user = null;
-    if (username === "admin" && password === "admin") {
-      user = {username, role: "admin"};
-    } else if (username === "leader" && password === "leader") {
-      user = {username, role: "leader"};
-    } else if (username === "user" && password === "user") {
-      user = {username, role: "user"};
-    }
+    isAuthenticated: false,
+    user: null,
 
-    if (user) {
-      authProvider.isAuthenticated = true;
-      authProvider.username = username;
-      authProvider.role = user.role;
-      localStorage.setItem("user", JSON.stringify(user));
-    }
-    
-    return user;
-  },
+    async signin(username, password) {
+        const { data } = await api.post("/auth/login", { username, password });
+        setAccessToken(data.accessToken);
+        authProvider.isAuthenticated = true;
+        authProvider.user = data.user;
+        return data.user;
+    },
 
-  async signout() {
-    await new Promise((r) => setTimeout(r, 500));
-    authProvider.isAuthenticated = false;
-    authProvider.username = null;
-    authProvider.role = null;
-    localStorage.removeItem("user");
-  },
+    async signout() {
+        try { await api.post("/auth/logout"); } catch {}
+        setAccessToken(null);
+        authProvider.isAuthenticated = false;
+        authProvider.user = null;
+    },
 
-  checkAuth() {
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      authProvider.isAuthenticated = true;
-      authProvider.username = user.username;
-      authProvider.role = user.role;
-      return user;
-    }
-    return null;
-  }
+    async checkAuth() {
+        try {
+            const { data } = await api.post("/auth/refresh");
+            setAccessToken(data.accessToken);
+            authProvider.isAuthenticated = true;
+            
+            const payload = JSON.parse(atob(data.accessToken.split(".")[1]));
+            authProvider.user = { id: payload.id, username: payload.username, role: payload.role };
+            return authProvider.user;
+        } catch {
+            authProvider.isAuthenticated = false;
+            authProvider.user = null;
+            return null;
+        }
+    },
 };

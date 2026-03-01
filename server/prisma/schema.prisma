@@ -12,16 +12,17 @@ datasource db {
 
 enum GlobalRole {
   admin
-  leader
   user
-  guest
 }
 
 enum BoardRole {
-  owner
-  editor
-  viewer
+  leader
+  assistant
+  user
+  collaborator
+  guest
 }
+
 
 enum ActivityAction {
   created
@@ -103,7 +104,7 @@ model Board {
 
 model BoardMember {
   id      Int       @id @default(autoincrement())
-  role    BoardRole @default(editor)
+  role    BoardRole @default(user)
 
   userId  Int       @map("user_id")
   boardId Int       @map("board_id")
