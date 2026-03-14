@@ -9,7 +9,7 @@ export const authenticateToken = (req, res, next) => {
         req.user = decoded;
         next();
     } catch (e) {
-        return res.status(403).json({ error: "Token is not valid or expired" });
+        return res.status(401).json({ error: "Token is not valid or expired" });
     }
 };
 

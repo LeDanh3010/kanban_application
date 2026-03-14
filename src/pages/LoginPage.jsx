@@ -1,37 +1,51 @@
-import { useRef, useEffect } from "react";
-import { Form, useActionData, useNavigation, redirect } from "react-router-dom";
+import { useRef, useEffect, useState } from "react";
+import { useFetcher, redirect } from "react-router-dom";
 import Button from "../components/ui/Button";
 import { authProvider } from "../utils/auth";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { loginSchema } from "../../shared/schemas/user.schema";
 
 export const loginAction = async ({ request }) => {
   const formData = await request.formData();
-  const username = formData.get("username");
+  const username = formData.get("username")?.trim();
   const password = formData.get("password");
+  const remember = formData.get("remember") === "on"
 
-  if (!username) {
-     return { error: "Username is required" };
+  // Frontend validation (matches backend Zod: username min 3, password min 8)
+  const validation = loginSchema.safeParse({ username, password });
+  if (!validation.success) {
+    return { error: validation.error.issues[0].message };
   }
 
-  const user = await authProvider.signin(username, password);
-  if (!user) {
-    return { error: "Username or password is incorrect" };
+  try {
+    const user = await authProvider.signin(username, password, remember);
+    if (!user) {
+      return { error: "Invalid username or password" };
+    }
+    if (user.firstLogin) {
+      return redirect("/first-login");
+    }
+    return redirect("/");
+  } catch (err) {
+    console.log("error",err);
+    const message = err.response?.data?.error || "Invalid username or password";
+    return { error: message };
   }
-
-  return redirect("/");
 };
 
 const LoginPage = () => {
-  const actionData = useActionData();
-  const navigation = useNavigation();
+  const fetcher = useFetcher();
   const inputRef = useRef(null);
-  const isSubmitting = navigation.state === "submitting";
+  const isSubmitting = fetcher.state === "submitting";
+  const error = fetcher.data?.error;
+  const[showPass,setShowPass] = useState(false);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#d8d8d8] bg-[url('https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=2400&q=80')] bg-cover bg-fixed bg-center">
+    <div className="flex min-h-screen items-center justify-center bg-[#d8d8d8] bg-[url('/backgrounds/b_login.jpg')] bg-cover bg-fixed bg-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
       
       <div className="relative z-10 w-full max-w-md rounded-2xl border border-white/20 bg-slate-900/90 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-md">
@@ -40,7 +54,7 @@ const LoginPage = () => {
           <p className="mt-2 text-sm text-slate-400">Sign in to your account</p>
         </div>
 
-        <Form method="post" className="space-y-6">
+        <fetcher.Form method="post" className="space-y-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300">Username</label>
             <input
@@ -54,15 +68,25 @@ const LoginPage = () => {
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300">Password</label>
-            <input
-              type="password"
-              name="password"
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition-colors focus:border-indigo-500 focus:bg-white/10"
-              placeholder="Enter your password"
-            />
-          </div>
+            <div className="relative">
+              <input
+                type={showPass ? "text" : "password"}
+                name="password"
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 pr-11 text-white outline-none transition-colors focus:border-indigo-500 focus:bg-white/10"
+                placeholder="Enter your password"
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                onClick={() => setShowPass(!showPass)}
+                aria-label={showPass ? "Hide password" : "Show password"}
+              >
+                {showPass ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+          </div>  
 
-          {actionData?.error && <p className="text-sm text-rose-400">{actionData.error}</p>}
+          {error && <p className="text-sm text-rose-400">{error}</p>}
 
           <Button 
             variant="solid" 
@@ -79,10 +103,11 @@ const LoginPage = () => {
               Remember me
             </label>
           </div>
-        </Form>
+        </fetcher.Form>
       </div>
     </div>
   );
 };
 
 export default LoginPage;
+

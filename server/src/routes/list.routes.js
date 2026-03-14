@@ -7,6 +7,7 @@ const router = Router();
 router.post("/boards/:boardId/lists",boardPermission(["leader"]),listController.createList);
 router.put("/lists/:id",boardPermission(["leader"]),listController.updateList);
 router.delete("/lists/:id",boardPermission(["leader"]),listController.deleteList);
+router.post("/lists/:id/copy",boardPermission(["leader"]),listController.copyList);
 router.put("/boards/:boardId/lists/reorder", boardPermission(["leader", "assistant", "user"]),listController.reorderLists);
 
 export default router;

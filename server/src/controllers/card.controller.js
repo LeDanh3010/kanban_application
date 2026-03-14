@@ -1,5 +1,70 @@
 import prisma from "../prisma.js";
 class CardController{
+    async searchCards(req, res) {
+        try {
+            const { q } = req.query;
+            if (!q || q.trim().length < 2) return res.json([]);
+
+            const userId = req.user.id;
+            const role = req.user.role;
+
+            let cardWhere = {
+                title: { contains: q.trim(), mode: "insensitive" },
+                archived: false,
+            };
+
+            let boardWhere = {
+                title: { contains: q.trim(), mode: "insensitive" },
+                archived: false,
+            };
+
+            if (role !== "admin") {
+                cardWhere.list = {
+                    board: {
+                        members: { some: { userId } }
+                    }
+                };
+                boardWhere.members = { some: { userId } };
+            }
+
+            const [cards, boards] = await Promise.all([
+                prisma.card.findMany({
+                    where: cardWhere,
+                    take: 5,
+                    include: {
+                        list: {
+                            include: {
+                                board: { select: { id: true, title: true } }
+                            }
+                        }
+                    }
+                }),
+                prisma.board.findMany({
+                    where: boardWhere,
+                    take: 5,
+                    select: { id: true, title: true }
+                })
+            ]);
+
+            const formattedCards = cards.map(c => ({
+                id: c.id,
+                type: 'card',
+                title: c.title,
+                listName: c.list.title,
+                boardId: c.list.board.id,
+                boardName: c.list.board.title
+            }));
+
+            const formattedBoards = boards.map(b => ({
+                id: b.id,
+                type: 'board',
+                title: b.title,
+                boardId: b.id,
+            }));
+
+            return res.json([...formattedBoards, ...formattedCards]);
+        } catch (e) { return res.status(500).json({ error: e.message }); }
+    }
     async createCard(req,res){
         try {
             const listId = parseInt(req.params.listId);

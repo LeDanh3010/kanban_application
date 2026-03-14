@@ -28,7 +28,7 @@ async function main() {
 
     await prisma.board.create({
         data: {
-            title: "Product Launch", accent: "sun",
+            title: "Product Launch", accent: "sun", coverUrl: "/backgrounds/b1.png",
             members: { create: [
                 { userId: userA.id, role: "leader" },
                 { userId: userB.id, role: "assistant" },

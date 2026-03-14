@@ -13,8 +13,7 @@ export const initialBoards = [
     id: "b1",
     title: "Product Launch",
     accent: "sun",
-    cover:
-      "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=80",
+    cover: "/backgrounds/b1.jpg",
     lists: [
       {
         id: "l1",
@@ -99,8 +98,7 @@ export const initialBoards = [
     id: "b2",
     title: "Marketing Calendar",
     accent: "sky",
-    cover:
-      "https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1200&q=80",
+    cover: "/backgrounds/b2.jpg",
     lists: [
       {
         id: "l5",
@@ -128,19 +126,17 @@ export const initialBoards = [
     id: "b3",
     title: "Personal Tasks",
     accent: "rose",
-    cover:
-      "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=1200&q=80",
+    cover: "/backgrounds/b3.jpg",
     lists: [],
   },
 ];
 
 export const boardCovers = [
-  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=80",
-  "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=1200&q=80",
+  "/backgrounds/b1.jpg",
+  "/backgrounds/b2.jpg",
+  "/backgrounds/b3.jpg",
+  "/backgrounds/b4.jpg",
+  "/backgrounds/b5.jpg",
 ];
 
 export const getCardCount = (lists) =>

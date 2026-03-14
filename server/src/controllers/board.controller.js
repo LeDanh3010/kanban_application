@@ -66,7 +66,7 @@ class BoardController {
                     title,
                     accent: accent || "sun",
                     coverUrl,
-                    members: { create: { userId: req.user.id } },
+                    members: { create: { userId: req.user.id, role: "leader" } },
                 },
                 include: { members: true },
             });
@@ -111,10 +111,38 @@ class BoardController {
 
             const member = await prisma.boardMember.create({
                 data: { boardId, userId, role: role || "user" },
+                include: { user: true }
             });
             return res.status(201).json(member);
         } catch (e) {
             if (e.code === "P2002") return res.status(400).json({ error: "User already in board" });
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+
+    async updateMemberRole(req, res) {
+        try {
+            const { memberId } = req.params;
+            const { role } = req.body;
+            const member = await prisma.boardMember.update({
+                where: { id: parseInt(memberId) },
+                data: { role },
+                include: { user: true }
+            });
+            return res.json(member);
+        } catch (e) {
+            return res.status(500).json({ error: "Internal server error" });
+        }
+    }
+
+    async removeMember(req, res) {
+        try {
+            const { memberId } = req.params;
+            await prisma.boardMember.delete({
+                where: { id: parseInt(memberId) }
+            });
+            return res.json({ message: "Member removed" });
+        } catch (e) {
             return res.status(500).json({ error: "Internal server error" });
         }
     }

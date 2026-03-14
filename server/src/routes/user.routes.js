@@ -8,7 +8,8 @@ const adminOnly = (req, res, next) => {
 };
 
 router.get("/", adminOnly, userController.getUsers);
-router.put("/:id/role", adminOnly, userController.updateUserRole);
+router.get("/search", userController.searchUsers);
+router.put("/:id", adminOnly, userController.updateUser);
 router.delete("/:id", adminOnly, userController.deleteUser);
 
 export default router;

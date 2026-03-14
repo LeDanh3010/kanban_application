@@ -48,6 +48,49 @@ class ListController{
         return res.status(500).json({ error: e.message });
     }
 }
+
+    async copyList(req, res) {
+        try {
+            const listId = parseInt(req.params.id);
+
+            const original = await prisma.list.findUnique({
+                where: { id: listId },
+                include: { cards: { where: { archived: false }, orderBy: { position: "asc" } } },
+            });
+            if (!original) return res.status(404).json({ error: "List not found" });
+
+
+            await prisma.list.updateMany({
+                where: { boardId: original.boardId, position: { gt: original.position } },
+                data: { position: { increment: 1 } },
+            });
+
+
+            const newList = await prisma.list.create({
+                data: {
+                    title: `${original.title} (Copy)`,
+                    accent: original.accent,
+                    position: original.position + 1,
+                    boardId: original.boardId,
+                    cards: {
+                        create: original.cards.map((card, idx) => ({
+                            title: card.title,
+                            description: card.description,
+                            dueDate: card.dueDate,
+                            completed: card.completed,
+                            position: idx,
+                        })),
+                    },
+                },
+                include: { cards: { orderBy: { position: "asc" } } },
+            });
+
+            return res.status(201).json(newList);
+        } catch (e) {
+            return res.status(500).json({ error: e.message });
+        }
+    }
+
     async deleteList(req, res) {
         try {
             await prisma.list.update({ where: { id: parseInt(req.params.id) }, data: { archived: true } });

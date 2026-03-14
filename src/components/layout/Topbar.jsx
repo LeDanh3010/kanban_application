@@ -4,8 +4,9 @@ import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
 import "overlayscrollbars/overlayscrollbars.css";
 import { useNavigate } from "react-router-dom";
 import { FaLink, FaChevronDown, FaTimes, FaUserPlus } from "react-icons/fa";
+import { searchCards, searchUsers, shareBoard, updateBoardMember, removeBoardMember } from "../../utils/data.js";
 
-const Topbar = ({ title = "Kanban", onBack, onLogout, onTitleChange, page,user }) => {
+const Topbar = ({ board, title = "Kanban", onBack, onLogout, onTitleChange, page, user }) => {
   const navigate = useNavigate();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
@@ -17,6 +18,28 @@ const Topbar = ({ title = "Kanban", onBack, onLogout, onTitleChange, page,user }
   const dropdownRef = useRef(null);
   const accountRef = useRef(null);
   const shareRef = useRef(null);
+  const searchRef = useRef(null);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchSelectedIndex, setSearchSelectedIndex] = useState(-1);
+
+  // Share Modal States
+  const [shareSearchQuery, setShareSearchQuery] = useState("");
+  const [userSuggestions, setUserSuggestions] = useState([]);
+  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
+  const [selectedRole, setSelectedRole] = useState("user");
+  const [memList, setMemList] = useState(board?.members || []);
+  const [showRoleDropdown, setShowRoleDropdown] = useState(null); // id of member
+  const [isAdding, setIsAdding] = useState(false);
+
+  useEffect(() => {
+    if (board?.members) setMemList(board.members);
+  }, [board?.members]);
+
+  const BOARD_ROLES = ["leader", "assistant", "user", "collaborator", "guest"];
   // Mock Notifications (same as before...)
   const [notifications, setNotifications] = useState([
     // ... existing notifications
@@ -68,7 +91,6 @@ const Topbar = ({ title = "Kanban", onBack, onLogout, onTitleChange, page,user }
   ]);
 
   const unreadCount = notifications.filter((n) => n.unread).length;
-console.log(user)
   // Close dropdowns on click outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -80,6 +102,9 @@ console.log(user)
       }
       if (shareRef.current && !shareRef.current.contains(event.target)) {
         setIsShareOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setIsSearchOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -150,6 +175,89 @@ console.log(user)
   const markAllAsRead = () => {
     setNotifications(notifications.map((n) => ({ ...n, unread: false })));
   };
+
+  // Debounced search
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      if (searchQuery.trim().length >= 2) {
+        setIsSearching(true);
+        try {
+          const results = await searchCards(searchQuery);
+          setSearchResults(results);
+          setSearchSelectedIndex(-1);
+          setIsSearchOpen(true);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        setSearchResults([]);
+        setIsSearchOpen(false);
+        setSearchSelectedIndex(-1);
+      }
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Share user search
+  useEffect(() => {
+    if (!shareSearchQuery.trim()) {
+        setUserSuggestions([]);
+        return;
+    }
+    const handler = setTimeout(async () => {
+        setIsSearchingUsers(true);
+        try {
+            const results = await searchUsers(shareSearchQuery);
+            // Filter out existing members
+            const filtrd = results.filter(u => !memList.some(m => m.userId === u.id));
+            setUserSuggestions(filtrd);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsSearchingUsers(false);
+        }
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [shareSearchQuery, memList]);
+
+  const handleAddMember = async (targetUser) => {
+    if (isAdding) return;
+    setIsAdding(true);
+    try {
+        const newMember = await shareBoard(board.id, targetUser.id, selectedRole);
+        setMemList([...memList, newMember]);
+        setShareSearchQuery("");
+        setUserSuggestions([]);
+    } catch (err) {
+        console.error(err);
+        alert(err.response?.data?.error || "Failed to add member");
+    } finally {
+        setIsAdding(false);
+    }
+  };
+
+  const handleUpdateRole = async (memberId, newRole) => {
+    try {
+        const updated = await updateBoardMember(board.id, memberId, newRole);
+        setMemList(memList.map(m => m.id === memberId ? updated : m));
+        setShowRoleDropdown(null);
+    } catch (err) {
+        console.error(err);
+    }
+  };
+
+  const handleRemoveMember = async (memberId) => {
+    if (!window.confirm("Are you sure you want to remove this member?")) return;
+    try {
+        await removeBoardMember(board.id, memberId);
+        setMemList(memList.filter(m => m.id !== memberId));
+    } catch (err) {
+        console.error(err);
+    }
+  };
   return (
     <header className="grid grid-cols-1 gap-3 bg-slate-900/60 backdrop-blur-md border-b border-white/5 p-3 text-slate-100 lg:grid-cols-[280px_1fr_auto] lg:items-center sticky top-0 z-50">
       {/* LEFT: fixed 280px grid column — input can grow inside but grid keeps searchbar anchored */}
@@ -216,7 +324,7 @@ console.log(user)
       </div>
 
       {/* CENTER: 1fr grid cell keeps searchbar anchored; max-w-md caps its visual width */}
-      <div className="relative group w-full max-w-lg mx-auto min-w-0">
+      <div className="relative group w-full max-w-lg mx-auto min-w-0" ref={searchRef}>
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
           <svg className="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -225,13 +333,81 @@ console.log(user)
         <input
           className="h-10 w-full rounded-xl border border-white/5 bg-slate-950/40 pl-10 pr-4 text-sm text-slate-200 shadow-inner outline-none placeholder:text-slate-500 focus:border-indigo-500/50 focus:bg-slate-950/60 transition-all"
           type="search"
-          placeholder="Quick search cards..."
+          placeholder="Search boards & cards..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onFocus={() => { if (searchQuery.length >= 2) setIsSearchOpen(true); }}
+          onKeyDown={(e) => {
+            if (!isSearchOpen || searchResults.length === 0) return;
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setSearchSelectedIndex((prev) => (prev < searchResults.length - 1 ? prev + 1 : prev));
+            } else if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setSearchSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev));
+            } else if (e.key === "Enter") {
+              e.preventDefault();
+              if (searchSelectedIndex >= 0 && searchSelectedIndex < searchResults.length) {
+                const item = searchResults[searchSelectedIndex];
+                setIsSearchOpen(false);
+                setSearchQuery("");
+                navigate(`/board/${item.boardId}`);
+              } else if (searchResults.length > 0) {
+                const item = searchResults[0];
+                setIsSearchOpen(false);
+                setSearchQuery("");
+                navigate(`/board/${item.boardId}`);
+              }
+            } else if (e.key === "Escape") {
+              e.preventDefault();
+              setIsSearchOpen(false);
+            }
+          }}
         />
+        
+        {isSearchOpen && (
+          <div className="absolute top-full mt-2 w-full rounded-2xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl overflow-hidden z-50 animate-scaleIn">
+             {isSearching ? (
+               <div className="p-4 text-center text-slate-400 text-sm">Searching...</div>
+             ) : searchResults.length > 0 ? (
+               <div className="max-h-80 overflow-y-auto">
+                 {searchResults.map((item, index) => (
+                   <div 
+                     key={`${item.type}-${item.id}`} 
+                     className={`px-4 py-3 cursor-pointer border-b border-white/5 last:border-0 transition-colors ${searchSelectedIndex === index ? 'bg-white/10' : 'hover:bg-white/5'}`}
+                     onClick={() => {
+                        setIsSearchOpen(false);
+                        setSearchQuery("");
+                        navigate(`/board/${item.boardId}`);
+                     }}
+                   >
+                     {item.type === 'board' ? (
+                       <p className="text-sm font-semibold text-white truncate flex items-center">
+                         <span className="text-indigo-400 mr-2 text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-indigo-500/10 shrink-0">Board</span>
+                         {item.title}
+                       </p>
+                     ) : (
+                       <div>
+                         <p className="text-sm font-semibold text-white truncate flex items-center">
+                           <span className="text-emerald-400 mr-2 text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 shrink-0">Card</span>
+                           {item.title}
+                         </p>
+                         <p className="text-xs text-slate-400 mt-1 truncate">in {item.boardName} • {item.listName}</p>
+                       </div>
+                     )}
+                   </div>
+                 ))}
+               </div>
+             ) : (
+               <div className="p-4 text-center text-slate-400 text-sm">No results found for "{searchQuery}"</div>
+             )}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-end gap-3">
         {/* Share Button & Dropdown */}
-        {page === "viewBoard" && ( <div className="relative hidden sm:block" ref={shareRef}>
+        {page === "viewBoard" && user.role === "admin" && ( <div className="relative hidden sm:block" ref={shareRef}>
           <Button 
             variant="ghost" 
             className={`px-4 py-2 text-sm border transition-all ${isShareOpen ? 'bg-white/10 border-white/20 text-white' : 'border-white/5 hover:bg-white/5'}`}
@@ -255,23 +431,64 @@ console.log(user)
                 <div className="p-4 pt-2">
                     {/* Input Row */}
                     <div className="flex gap-2 mb-6">
-                        <input 
-                          className="flex-1 bg-[#22272b] border border-slate-600 rounded-[3px] px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
-                          placeholder="Email address or name"
-                          autoFocus 
-                        />
-                        <div className="relative">
-                            <button className="flex items-center gap-1 bg-[#22272b] border border-slate-600 rounded-[3px] px-3 py-2 text-sm text-white hover:bg-slate-700 transition-colors">
-                              Member <FaChevronDown className="h-3 w-3 ml-1"/>
-                            </button>
+                        <div className="flex-1 relative">
+                          <input 
+                            className="w-full bg-[#22272b] border border-slate-600 rounded-[3px] px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" 
+                            placeholder="Username"
+                            value={shareSearchQuery}
+                            onChange={(e) => setShareSearchQuery(e.target.value)}
+                            autoFocus 
+                          />
+                          {userSuggestions.length > 0 && (
+                            <div className="absolute top-full left-0 w-full mt-1 bg-[#282e33] border border-slate-700 rounded shadow-xl z-50 overflow-hidden">
+                              {userSuggestions.map(u => (
+                                <button 
+                                  key={u.id}
+                                  className="w-full text-left px-3 py-2 text-sm text-white hover:bg-slate-700 transition-colors flex items-center justify-between"
+                                  onClick={() => handleAddMember(u)}
+                                >
+                                  <span>{u.username}</span>
+                                  <span className="text-[10px] text-slate-400 capitalize">{u.role}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        <button className="bg-blue-400 hover:bg-blue-500 text-slate-900 font-medium rounded-[3px] px-4 py-2 text-sm transition-colors">
-                          Share
-                        </button>
+                            <button 
+                              className="flex items-center gap-2 bg-[#22272b] border border-slate-600 rounded-[3px] px-3 py-2 text-sm text-white hover:bg-slate-700 hover:border-slate-500 transition-all capitalize"
+                              onClick={() => setShowRoleDropdown(showRoleDropdown === 'new' ? null : 'new')}
+                            >
+                              <span className="font-medium">{selectedRole}</span>
+                              <FaChevronDown className={`h-3 w-3 text-slate-400 transition-transform ${showRoleDropdown === 'new' ? 'rotate-180' : ''}`}/>
+                            </button>
+                            {showRoleDropdown === 'new' && (
+                              <div className="absolute top-full right-0 mt-1 bg-[#282e33] border border-slate-700 rounded-md shadow-[0_8px_30px_rgb(0,0,0,0.5)] z-[60] overflow-hidden w-40 animate-scaleIn origin-top-right">
+                                <div className="p-1.5">
+                                  <p className="px-2 py-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Select role</p>
+                                  {BOARD_ROLES.map(r => (
+                                    <button 
+                                      key={r}
+                                      className={`w-full text-left px-2.5 py-2 text-sm rounded transition-colors capitalize ${selectedRole === r ? 'bg-blue-500/10 text-blue-400 font-medium' : 'text-slate-200 hover:bg-white/5'}`}
+                                      onClick={() => {
+                                        setSelectedRole(r);
+                                        setShowRoleDropdown(null);
+                                      }}
+                                    >
+                                      {r}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                        {isSearchingUsers && (
+                          <div className="flex items-center px-2">
+                             <div className="h-4 w-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        )}
                     </div>
 
                     {/* Link Share */}
-                    <div className="flex items-center gap-4 mb-6">
+                    {/* <div className="flex items-center gap-4 mb-6">
                         <div className="p-2 bg-slate-700/50 rounded-[3px]"> 
                           <FaLink className="text-slate-400 h-4 w-4"/> 
                         </div>
@@ -281,31 +498,72 @@ console.log(user)
                             </div>
                             <button className="text-sm text-blue-400 hover:underline">Create link</button>
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* Tabs */}
-                    <div className="flex gap-6 border-b border-slate-700 mb-4">
-                        <button className="text-sm text-blue-400 font-medium border-b-2 border-blue-400 pb-2 flex items-center gap-2">
+                    <div className="flex gap-6 border-b border-slate-700/50 mb-4">
+                        <div className="text-sm text-blue-400 font-semibold border-b-2 border-blue-400 pb-2 flex items-center gap-2">
                           Board members 
-                          <span className="bg-slate-700 text-slate-300 rounded px-1.5 py-0.5 text-xs">1</span>
-                        </button>
-                        <button className="text-sm text-slate-400 font-medium pb-2 hover:text-white transition-colors">
-                          Join requests
-                        </button>
+                          <span className="bg-blue-400/10 text-blue-400 rounded-full px-2 py-0.5 text-[10px] font-bold">
+                            {memList.length}
+                          </span>
+                        </div>
                     </div>
 
                     {/* Member List */}
-                    <div className="flex items-center justify-between py-2">
-                        <div className="flex items-center gap-3">
-                             <div className="h-10 w-10 rounded-full bg-emerald-700 flex items-center justify-center text-sm font-bold text-white">JL</div>
-                             <div>
-                                <p className="text-sm font-bold text-white">Jan Lee (you)</p>
-                                <p className="text-xs text-slate-400">@janlee35 • Workspace admin</p>
-                             </div>
+                    <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                      {memList.map(member => (
+                        <div key={member.id} className="flex items-center justify-between py-2 border-b border-slate-700 last:border-0 group/mem">
+                            <div className="flex items-center gap-3">
+                                 <div className="h-9 w-9 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-bold text-white shadow">
+                                   {member.user.username.slice(0, 2).toUpperCase()}
+                                 </div>
+                                 <div>
+                                    <p className="text-sm font-bold text-white flex items-center gap-1.5">
+                                      {member.user.username} 
+                                      {member.userId === user.id && <span className="text-[10px] bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded uppercase font-bold tracking-tighter">You</span>}
+                                    </p>
+                                    <p className="text-[11px] text-slate-400 font-medium">{member.user.role === 'admin' ? 'Global Admin' : 'Member'}</p>
+                                 </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {member.userId !== user.id && (
+                                <button
+                                  onClick={() => handleRemoveMember(member.id)}
+                                  className="p-1.5 text-slate-500 hover:text-rose-400 opacity-0 group-hover/mem:opacity-100 transition-all cursor-pointer rounded-md hover:bg-rose-500/10"
+                                  title="Remove from board"
+                                >
+                                  <FaTimes className="h-3.5 w-3.5"/>
+                                </button>
+                              )}
+                              <div className="relative">
+                                  <button 
+                                    className="flex items-center gap-2 bg-transparent hover:bg-white/5 rounded-[3px] px-2.5 py-1.5 text-xs text-slate-300 transition-all capitalize min-w-[90px] justify-between border border-transparent hover:border-slate-700"
+                                    onClick={() => setShowRoleDropdown(showRoleDropdown === member.id ? null : member.id)}
+                                  >
+                                    <span className="font-medium">{member.role}</span>
+                                    <FaChevronDown className={`h-2.5 w-2.5 text-slate-500 transition-transform ${showRoleDropdown === member.id ? 'rotate-180' : ''}`}/>
+                                  </button>
+                                  {showRoleDropdown === member.id && (
+                                    <div className="absolute top-full right-0 mt-1 bg-[#282e33] border border-slate-700 rounded-md shadow-[0_8px_30px_rgb(0,0,0,0.6)] z-[100] overflow-hidden w-40 origin-top-right animate-scaleIn">
+                                      <div className="p-1.5">
+                                        <p className="px-2 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Board Role</p>
+                                        {BOARD_ROLES.map(r => (
+                                          <button 
+                                            key={r}
+                                            className={`w-full text-left px-2.5 py-2 text-sm rounded transition-colors capitalize ${member.role === r ? 'bg-blue-500/10 text-blue-400 font-medium' : 'text-slate-200 hover:bg-white/5'}`}
+                                            onClick={() => handleUpdateRole(member.id, r)}
+                                          >
+                                            {r}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                              </div>
+                            </div>
                         </div>
-                        <button className="flex items-center gap-1 bg-[#22272b] border border-slate-600 rounded-[3px] px-3 py-1.5 text-sm text-white hover:bg-slate-700 transition-colors">
-                          Admin <FaChevronDown className="h-3 w-3 ml-1"/>
-                        </button>
+                      ))}
                     </div>
                 </div>
              </div>
@@ -390,7 +648,7 @@ console.log(user)
               onClick={() => setIsAccountOpen(!isAccountOpen)}
               className={`bg-gradient-to-br from-indigo-500/20 to-purple-600/20 border transition-all ${isAccountOpen ? 'border-white/40 ring-2 ring-white/10' : 'border-white/5 hover:border-white/20'}`}
             >
-              <span className="text-xs font-bold bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">JL</span>
+              <span className="text-xs font-bold bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">{(user?.username ?? "??").slice(0, 2).toUpperCase()}</span>
             </Button>
 
             {isAccountOpen && (
@@ -400,11 +658,11 @@ console.log(user)
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Account</p>
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-emerald-500 flex items-center justify-center text-sm font-bold text-white shadow-lg">
-                      JL
+                      {(user?.username ?? "??").slice(0, 2).toUpperCase()}
                     </div>
                     <div className="flex flex-col">
-                      <p className="text-sm font-bold text-white">{(user.username ?? "?").charAt(0).toUpperCase()}</p>
-                      <p className="text-[11px] text-slate-400 truncate">{user.role}</p>
+                      <p className="text-sm font-bold text-white">{user?.username}</p>
+                      <p className="text-[11px] text-slate-400 truncate">{user?.role}</p>
                     </div>
                   </div>
                 </div>

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Fade as Hamburger } from "hamburger-react";
 import { Sidebar, Menu, MenuItem } from "react-pro-sidebar";
-import { getUsers, registerUser, updateUserRole, deleteUser } from "../utils/data";
+import { getUsers, registerUser, updateUser, deleteUser } from "../utils/data";
 import { ClipLoader } from "react-spinners";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { registerSchema } from "../../shared/schemas/user.schema";  
 
 
 import {
@@ -14,11 +16,18 @@ import {
   FaCheckCircle,
 } from "react-icons/fa";
 import Button from "../components/ui/Button";
+import ConfirmModal from "../components/ui/ConfirmModal";
+import ErrorModal from "../components/ui/ErrorModal";
 
 const AdminPage = ({ onLogout, onNavigateHome }) => {
   const [collapsed, setCollapsed] = useState(true);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const[showPass,setShowPass] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 5;
 
   useEffect(()=>{
     const fetchUser = async()=>{
@@ -50,6 +59,22 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
    // Delete confirmation modal state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
+
+  // Error modal state
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [error, setError] = useState(null);
+  const showError = (errData, fallbackMessage) => {
+    let msg = fallbackMessage;
+    if (typeof errData === "string") {
+        msg = errData;
+    } else if (Array.isArray(errData) && errData.length > 0) {
+        msg = errData[0].message || fallbackMessage;
+    }
+    setErrorMessage(msg);
+    setErrorModalOpen(true);
+  };
+
   useEffect(()=>{
     const handleKeyDown = (e)=>{
       if(e.key === "Escape"){
@@ -94,10 +119,31 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
     try {
+      if (modalMode === 'add') {
+        const validation = registerSchema.safeParse(formData);
+        if (!validation.success) {
+          setError(validation.error.issues[0].message);
+          return;
+        }
+      }
+      // } else {
+      //   // Edit mode validation
+      //   const validation = updateUserSchema.safeParse(formData);
+      //   if (!validation.success) {
+      //     setError(validation.error.issues[0].message);
+      //     return;
+      //   }
+      // }
+
         if (modalMode === 'edit') {
-            // Update role via API
-            await updateUserRole(editingUser.id, formData.role);
+            // Update user via API
+            const payload = { username: formData.username, role: formData.role };
+            if (formData.password) {
+                payload.password = formData.password;
+            }
+            await updateUser(editingUser.id, payload);
         } else {
             // Register new user via API
             await registerUser(formData.username, formData.password, formData.role);
@@ -107,7 +153,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
         setUsers(data);
     } catch (err) {
         console.error("Failed to save user:", err);
-        alert(err.response?.data?.error || "Operation failed");
+        showError(err.response?.data?.error, "Operation failed");
     }
 
     // Close modal and reset form
@@ -120,6 +166,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
   // Handle closing modal
   const handleCloseModal = () => {
     setIsUserModalOpen(false);
+    setError(null);
     setEditingUser(null);
     setFormData({ username: "", role: "user", password: "" });
   };
@@ -138,7 +185,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
         setUsers(data);
     } catch (err) {
         console.error("Failed to delete user:", err);
-        alert(err.response?.data?.error || "Delete failed");
+        showError(err.response?.data?.error, "Delete failed");
     }
     setIsDeleteModalOpen(false);
     setUserToDelete(null);
@@ -149,6 +196,18 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
   const handleCancelDelete = () => {
     setIsDeleteModalOpen(false);
     setUserToDelete(null);
+  };
+
+  // Pagination computations
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(users.length / usersPerPage);
+
+  const paginate = (pageNumber) => {
+    if (pageNumber >= 1 && pageNumber <= totalPages) {
+      setCurrentPage(pageNumber);
+    }
   };
 
   return (
@@ -241,7 +300,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
                 <div>
                   <p className="text-sm font-medium text-slate-400">Total Users</p>
                   <p className="mt-2 text-3xl font-bold text-white">{users.length}</p>
-                  <p className="mt-1 text-xs text-emerald-400">↑ 12% from last month</p>
+                  <p className="mt-1 text-xs text-emerald-400">Manage all users</p>
                 </div>
                 <div className="rounded-xl bg-indigo-500/10 p-3">
                   <FaUsers className="h-6 w-6 text-indigo-400" />
@@ -321,13 +380,13 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
-                  {users.map((user) => (
+                  {currentUsers.map((user) => (
                     <tr key={user.id} className="group hover:bg-white/5 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="relative shrink-0">
                             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white shadow-lg">
-                              {(user.username ?? "?").charAt(0)}
+                              {(user.username ?? "?"). charAt(0).toUpperCase()}
                             </div>
                             {user.status === "Active" && (
                               <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-slate-900" />
@@ -391,6 +450,49 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
               </table>
               )}
               
+              {/* Pagination Controls */}
+              {!loading && totalPages > 1 && (
+                <div className="flex items-center justify-between border-t border-white/10 px-6 py-4 bg-white/5">
+                  <div className="text-sm text-slate-400">
+                     Showing <span className="font-medium text-white">{indexOfFirstUser + 1}</span> to <span className="font-medium text-white">{Math.min(indexOfLastUser, users.length)}</span> of <span className="font-medium text-white">{users.length}</span> results
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="none"
+                      onClick={() => paginate(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Previous
+                    </Button>
+                    
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }).map((_, index) => (
+                        <button
+                          key={index + 1}
+                          onClick={() => paginate(index + 1)}
+                          className={`w-8 h-8 flex items-center justify-center rounded-md text-sm font-medium transition-colors ${
+                            currentPage === index + 1
+                              ? "bg-indigo-500 text-white"
+                              : "text-slate-300 hover:bg-slate-800"
+                          }`}
+                        >
+                          {index + 1}
+                        </button>
+                      ))}
+                    </div>
+
+                    <Button
+                      variant="none"
+                      onClick={() => paginate(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 rounded-md bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -430,7 +532,6 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
                 name="username"
                 value={formData.username}
                 onChange={handleInputChange}
-                required
                 className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
               />
             </div>
@@ -439,9 +540,8 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
             <div>
               <label className="block text-sm text-slate-300 mb-2">Role</label>
               <select className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white cursor-pointer" name="role" value={formData.role} onChange={handleInputChange}>
-                <option value="user">User</option>
-                <option value="leader">Leader</option>
                 <option value="admin">Admin</option>
+                <option value="user">User</option>
               </select>
             </div>
 
@@ -455,15 +555,25 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
                   </span>
                 )}
               </label>
-              <input
-                type="password"
+              <div className="relative">
+                <input
+                type={showPass ? "text" : "password" }
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 bg-slate-800 border border-white/10 rounded-lg text-white"
               />
+               <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                onClick={() => setShowPass(!showPass)}
+                aria-label={showPass ? "Hide password" : "Show password"}
+              >
+                {showPass ? <FaEyeSlash /> : <FaEye />}
+              </button>
+              </div>
             </div>
-
+            {error && <p className="text-sm text-rose-400">{error}</p>}
             {/* Buttons */}
             <div className="flex gap-3 pt-4">
               <Button
@@ -481,6 +591,7 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
               >
                 {modalMode === "edit" ? "Save Changes" : "Add User"}
               </Button>
+              
             </div>
           </form>
         </div>
@@ -489,40 +600,28 @@ const AdminPage = ({ onLogout, onNavigateHome }) => {
      
 
       {/* ===== DELETE CONFIRMATION MODAL ===== */}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fadeIn">
-          {/* Backdrop - No blur */}
-          <div 
-            className="absolute inset-0 bg-black/40"
-            onClick={handleCancelDelete}
-          />
-          
-          {/* Simple Confirmation Dialog */}
-          <div className="relative bg-slate-900 rounded-lg border border-white/10 shadow-2xl p-6 max-w-sm w-full animate-scaleIn">
-            <p className="text-white text-center mb-6">
-              Are you sure you want to delete <span className="font-semibold text-rose-400">{userToDelete?.username}</span>?
-            </p>
-            
-            {/* Yes/No Buttons */}
-            <div className="flex gap-3 justify-center">
-              <Button
-                variant="none"
-                onClick={handleCancelDelete}
-                className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-all min-w-[80px]"
-              >
-                No
-              </Button>
-              <Button
-                variant="none"
-                onClick={handleConfirmDelete}
-                className="px-6 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-medium transition-all min-w-[80px]"
-              >
-                Yes
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        confirmText="Yes"
+        cancelText="No"
+      >
+        <p>
+          Are you sure you want to delete{" "}
+          <span className="font-semibold text-rose-400">
+            {userToDelete?.username}
+          </span>
+          ?
+        </p>
+      </ConfirmModal>
+
+      {/* ===== ERROR MODAL ===== */}
+      <ErrorModal
+        isOpen={errorModalOpen}
+        onClose={() => setErrorModalOpen(false)}
+        errorMessage={errorMessage}
+      />
     </div>
   );
 };

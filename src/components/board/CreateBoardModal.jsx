@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { boardCovers } from "../../data/boards.js";
 import Button from "../ui/Button.jsx";
 
@@ -13,20 +13,35 @@ const CreateBoardModal = ({ onClose, onCreate }) => {
     return accentOptions[title.trim().length % accentOptions.length];
   }, [title]);
 
-  useEffect(() => {
-    const onKey = (event) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
-  const handleSubmit = () => {
+   const handleSubmit = () => {
     setTouched(true);
     const nextTitle = title.trim();
     if (!nextTitle) return;
-    onCreate({ title: nextTitle, cover, accent });
+    onCreate({ title: nextTitle, coverUrl: cover, accent });
   };
+  const inputRef = useRef(null);
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+  useEffect(() => {
+  const onKey = (event) => {
+    if (event.key === "Escape") onClose();
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSubmit();
+    }
+  };
+
+  document.addEventListener("keydown", onKey);
+
+  return () => {
+    document.removeEventListener("keydown", onKey);
+  };
+}, [onClose, handleSubmit]);
+
+ 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
@@ -77,14 +92,14 @@ const CreateBoardModal = ({ onClose, onCreate }) => {
                 aria-label="Select background"
               />
             ))}
-            <Button
+            {/* <Button
               variant="ghost"
               className="h-12 rounded-lg border-white/10 text-sm text-slate-300"
               type="button"
               aria-label="More backgrounds"
             >
               ...
-            </Button>
+            </Button> */}
           </div>
         </div>
 
@@ -93,6 +108,7 @@ const CreateBoardModal = ({ onClose, onCreate }) => {
             Board title<span className="text-rose-400"> *</span>
           </label>
           <input
+            ref={inputRef}
             className={`mt-2 h-10 w-full rounded-lg border bg-slate-950/80 px-3 text-sm text-slate-100 outline-none ${
               touched && !title.trim()
                 ? "border-rose-400"

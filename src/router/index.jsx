@@ -1,4 +1,4 @@
-import { createBrowserRouter, redirect, useLoaderData, useNavigate, useSubmit, useRouteLoaderData, Navigate } from "react-router-dom";
+import { createBrowserRouter, redirect, useLoaderData, useNavigate, useSubmit, useRouteLoaderData, Navigate, useRevalidator } from "react-router-dom";
 import { useEffect, useState } from "react";
 import rootLoader from "../loaders/rootLoader";
 import MainLayout from "../layouts/MainLayout";
@@ -7,9 +7,11 @@ import BoardsHome from "../pages/BoardsHome";
 import LoginPage, { loginAction } from "../pages/LoginPage";
 import AdminPage from "../pages/AdminPage";
 import ActivityPage from "../pages/ActivityPage";
-import CardsPage from "../pages/CardsPage";import BoardView from "../pages/BoardView";
+import CardsPage from "../pages/CardsPage";
+import BoardView from "../pages/BoardView";
+import FirstLoginPage, { firstLoginAction } from "../pages/FirstLoginPage";
 import { authProvider } from "../utils/auth";
-import { getBoards, getBoard, createBoard, updateBoardLists, updateBoardTitle } from "../utils/data";
+import { getBoards, getBoard, createBoard, archiveBoard, updateBoardLists, updateBoardTitle } from "../utils/data";
 
 export const router = createBrowserRouter([
   {
@@ -64,8 +66,24 @@ export const router = createBrowserRouter([
     path: "/login",
     element: <LoginPage />,
     action: loginAction,
+    shouldRevalidate: () => false,
     loader: async () => {
-      if (authProvider.isAuthenticated) return redirect("/");
+      if (authProvider.isAuthenticated) {
+         if (authProvider.user?.firstLogin) return redirect("/first-login");
+         return redirect("/");
+      }
+      return null;
+    },
+  },
+  {
+    path: "/first-login",
+    element: <FirstLoginPage />,
+    action: firstLoginAction,
+    shouldRevalidate: () => false,
+    loader: async () => {
+      const user = await authProvider.checkAuth();
+      if (!user) return redirect("/login");
+      if (!user.firstLogin) return redirect("/");
       return null;
     },
   },
@@ -83,10 +101,24 @@ function BoardsHomeWrapper() {
   const { user } = useRouteLoaderData("root");
   const navigate = useNavigate();
   const submit = useSubmit();
+  const revalidator = useRevalidator();
 
   const handleCreateBoard = async (boardData) => {
-     await createBoard(boardData);
-     navigate(0); 
+    try {
+      await createBoard(boardData);
+      revalidator.revalidate();
+    } catch (err) {
+      console.error("Failed to create board:", err);
+    }
+  };
+
+  const handleArchiveBoard = async (boardId) => {
+    try {
+      await archiveBoard(boardId);
+      revalidator.revalidate();
+    } catch (err) {
+      console.error("Failed to archive board:", err);
+    }
   };
 
   return (
@@ -97,6 +129,7 @@ function BoardsHomeWrapper() {
       onGoToAdmin={user.role === "admin" ? () => navigate("/admin") : null}
       onOpenBoard={(id) => navigate(`/board/${id}`)}
       onCreateBoard={handleCreateBoard}
+      onArchiveBoard={handleArchiveBoard}
     />
   );
 }
@@ -134,11 +167,10 @@ function BoardViewWrapper() {
     setBoard(initialBoard);
   }, [initialBoard]);
 
-  const handleUpdateLists = async (updater) => {
+  const handleUpdateLists = (updater) => {
     const newLists = typeof updater === 'function' ? updater(board.lists) : updater;
     const nextBoard = { ...board, lists: newLists };
     setBoard(nextBoard);
-    await updateBoardLists(board.id, newLists);
   };
 
   const handleUpdateBoardTitle = async (newTitle) => {
@@ -154,6 +186,7 @@ function BoardViewWrapper() {
       board={board}
       boards={boards}
       activeBoardId={board.id}
+      user={user}
       onBack={() => navigate("/")}
       onUpdateLists={handleUpdateLists}
       onUpdateBoardTitle={handleUpdateBoardTitle}

@@ -23,11 +23,14 @@ import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
 import "overlayscrollbars/overlayscrollbars.css";
 
 import { accentCycle } from "../data/boards.js";
+import { createList as createListAPI, updateList as updateListAPI, deleteList as deleteListAPI, copyList as copyListAPI, createCard as createCardAPI, updateCard as updateCardAPI, deleteCard as deleteCardAPI, reorderCards as reorderCardsAPI } from "../utils/data";
+
 
 const BoardView = ({
   board,
   boards,
   activeBoardId,
+  user,
   onBack,
   onUpdateLists,
   onUpdateBoardTitle,
@@ -50,97 +53,110 @@ const BoardView = ({
   }, []);
 
   // 2. Data Operations
-  const addList = useCallback((title) => {
+  const addList = useCallback(async (title) => {
     const trimmed = title.trim();
     if (!trimmed) return;
+    try{
+      const newList = await createListAPI(board.id,trimmed);
+      onUpdateLists((current) => [...current, { ...newList, cards: [] }]);
+    }catch(e){
+       console.error("Failed to create list:", e);
+    }
+    
+  }, [board.id,onUpdateLists]);
 
-    const accent = accentCycle[board.lists.length % accentCycle.length];
-    const next = {
-      id: `l${Date.now()}`,
-      title: trimmed,
-      accent,
-      cards: [],
-    };
-
-    onUpdateLists((current) => [...current, next]);
-  }, [board.lists.length, onUpdateLists]);
-
-  const updateListTitle = useCallback((listId, nextTitle) => {
+  const updateListTitle = useCallback(async (listId, nextTitle) => {
     onUpdateLists((current) =>
       current.map((list) =>
         list.id === listId ? { ...list, title: nextTitle } : list,
       ),
     );
+    try{
+      await updateListAPI(listId, { title: nextTitle });
+    }catch(e){
+      console.error("Failed to update list title:", e);
+    }
   }, [onUpdateLists]);
 
-  const addCard = useCallback((listId, title) => {
+  const addCard = useCallback(async (listId, title) => {
     const trimmed = title.trim();
     if (!trimmed) return;
 
-    onUpdateLists((current) =>
-      current.map((list) =>
-        list.id === listId
-          ? {
-              ...list,
-              cards: [
-                ...list.cards,
-                {
-                  id: `c${Date.now()}`,
-                  title: trimmed,
-                  completed: false,
-                },
-              ],
-            }
-          : list,
-      ),
-    );
+    try {
+     const newCard = await createCardAPI(listId, trimmed);
+     onUpdateLists((current) => current.map((list) =>
+       list.id === listId
+         ? { ...list, cards: [...list.cards, newCard] }
+         : list
+     ));
+   } catch (err) {
+     console.error("Failed to create card:", err);
+   }
   }, [onUpdateLists]);
 
-  const toggleCard = useCallback((listId, cardId) => {
+  const toggleCard = useCallback(async (listId, cardId) => {
+    const card = board.lists.find(l => l.id === listId)?.cards.find(c => c.id === cardId);
+    if (!card) return;
     onUpdateLists((current) =>
       current.map((list) =>
         list.id === listId
           ? {
               ...list,
-              cards: list.cards.map((card) =>
-                card.id === cardId
-                  ? { ...card, completed: !card.completed }
-                  : card,
+              cards: list.cards.map((c) =>
+                c.id === cardId
+                  ? { ...c, completed: !c.completed }
+                  : c,
               ),
             }
           : list,
       ),
     );
-  }, [onUpdateLists]);
+    try {
+      await updateCardAPI(cardId, { completed: !card.completed });
+    } catch (err) {
+      console.error("Failed to toggle card:", err);
+    }
+  }, [onUpdateLists, board.lists]);
 
-  const copyList = useCallback((listId) => {
-    onUpdateLists((current) => {
-       const listIndex = current.findIndex(l => l.id === listId);
-       if(listIndex === -1) return current;
-       
-       const original = current[listIndex];
-       const next = {
-           ...original,
-           id: `l${Date.now()}`,
-           title: `${original.title} (Copy)`,
-           cards: original.cards.map(c => ({...c, id: `c${Date.now()}_${Math.random().toString(36).substr(2, 5)}`}))
-       };
-       
-       const nextLists = [...current];
-       nextLists.splice(listIndex + 1, 0, next);
-       return nextLists;
-    });
-  }, [onUpdateLists]);
+  const copyList = useCallback(async (listId) => {
+   try {
+     const newList = await copyListAPI(listId);
+     onUpdateLists(current => {
+       const idx = current.findIndex(l => l.id === listId);
+       const next = [...current];
+       next.splice(idx + 1, 0, newList);
+       return next;
+     });
+   } catch (err) {
+     console.error("Failed to copy list:", err);
+   }
+ }, [onUpdateLists]);
 
-  const deleteList = useCallback((listId) => {
-      onUpdateLists(current => current.filter(l => l.id !== listId));
-  }, [onUpdateLists]);
+  const deleteList = useCallback(async (listId) => {
+    const backup = board.lists;
+    onUpdateLists(current => current.filter(l => l.id !== listId));
+    try {
+      await deleteListAPI(listId);
+    } catch (err) {
+      console.error("Failed to delete list:", err);
+      onUpdateLists(backup); 
+    }
+  }, [onUpdateLists, board.lists]);
 
-  const clearList = useCallback((listId) => {
-      onUpdateLists(current => current.map(l => l.id === listId ? { ...l, cards: [] } : l));
-  }, [onUpdateLists]);
+  const clearList = useCallback(async (listId) => {
+   const list = board.lists.find(l => l.id === listId);
+   if (!list) return;
+   onUpdateLists(current => current.map(l =>
+     l.id === listId ? { ...l, cards: [] } : l
+   ));
+   try {
+     await Promise.all(list.cards.map(c => deleteCardAPI(c.id)));
+   } catch (err) {
+     console.error("Failed to clear list:", err);
+   }
+ }, [board.lists, onUpdateLists]);
 
-  const renameCard = useCallback((listId, cardId, newTitle) => {
+  const renameCard = useCallback(async (listId, cardId, newTitle) => {
     onUpdateLists((current) =>
       current.map((list) =>
         list.id === listId
@@ -153,9 +169,14 @@ const BoardView = ({
           : list
       )
     );
+    try {
+      await updateCardAPI(cardId, { title: newTitle });
+    } catch (err) {
+      console.error("Failed to rename card:", err);
+    }
   }, [onUpdateLists]);
 
-  const archiveCard = useCallback((listId, cardId) => {
+  const archiveCard = useCallback(async (listId, cardId) => {
     onUpdateLists((current) =>
       current.map((list) =>
         list.id === listId
@@ -163,7 +184,13 @@ const BoardView = ({
           : list
       )
     );
+    try {
+      await deleteCardAPI(cardId);
+    } catch (err) {
+      console.error("Failed to archive card:", err);
+    }
   }, [onUpdateLists]);
+
 
   // 3. Drag and Drop Logic
   const [activeDrag, setActiveDrag] = useState(null);
@@ -303,8 +330,8 @@ const BoardView = ({
           ?.cards.find((card) => `card-${card.id}` === activeDrag.id)
       : null;
 
-  const backdropStyle = board.cover
-    ? { backgroundImage: `url(${board.cover})` }
+  const backdropStyle = board.coverUrl
+    ? { backgroundImage: `url(${board.coverUrl})` }
     : {
         backgroundImage:
           "linear-gradient(140deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95))",
@@ -328,7 +355,7 @@ const BoardView = ({
       <div className="absolute inset-0 noise-overlay opacity-[0.07]" />
       
       <div className="relative z-10 flex h-screen flex-col">
-        <Topbar title={board.title} onBack={onBack} onLogout={onLogout} onTitleChange={onUpdateBoardTitle} page="viewBoard"/>
+        <Topbar board={board} title={board.title} onBack={onBack} onLogout={onLogout} onTitleChange={onUpdateBoardTitle} page="viewBoard" user={user}/>
 
         <DndContext
           sensors={sensors}

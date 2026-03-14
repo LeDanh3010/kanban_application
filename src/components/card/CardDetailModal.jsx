@@ -77,7 +77,7 @@ const CardDetailModal = ({ card, listTitle, onClose }) => {
               <textarea
                 className="mt-2 min-h-[120px] w-full rounded-xl border border-white/10 bg-slate-950/70 p-3 text-sm text-slate-200 outline-none placeholder:text-slate-500 focus:border-white/30"
                 placeholder="Add a more detailed description..."
-                defaultValue={card.note ?? ""}
+                defaultValue={card.description ?? card.note ?? ""}
               />
             </div>
           </section>

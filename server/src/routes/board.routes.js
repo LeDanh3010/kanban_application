@@ -14,7 +14,9 @@ router.get("/:id",boardPermission(ALL_ROLES),boardController.getBoard);
 router.post("/",adminOnly,boardController.createBoard)
 router.put("/:id",adminOnly,boardController.updateBoard)
 router.delete("/:id",adminOnly,boardController.archiveBoard)
-router.post("/:id/share",adminOnly,boardController.shareBoard)
+router.post("/:id/share", adminOnly, boardController.shareBoard);
+router.put("/:id/members/:memberId", adminOnly, boardController.updateMemberRole);
+router.delete("/:id/members/:memberId", adminOnly, boardController.removeMember);
 
 
 

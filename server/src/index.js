@@ -2,12 +2,10 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+
 import registerRoutes from "./routes/index.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -19,7 +17,6 @@ app.use(cors({
     credentials: true,
 }));
 app.use(express.json());
-app.use(express.static(join(__dirname, "../public")));
 
 // Routes
 registerRoutes(app);

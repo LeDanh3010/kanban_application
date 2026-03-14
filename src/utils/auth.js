@@ -1,11 +1,11 @@
-import api, { setAccessToken } from "./api";
+import api, { setAccessToken, doRefresh } from "./api";
 
 export const authProvider = {
     isAuthenticated: false,
     user: null,
 
-    async signin(username, password) {
-        const { data } = await api.post("/auth/login", { username, password });
+    async signin(username, password, remember = false) {
+        const { data } = await api.post("/auth/login", { username, password, remember });
         setAccessToken(data.accessToken);
         authProvider.isAuthenticated = true;
         authProvider.user = data.user;
@@ -21,12 +21,16 @@ export const authProvider = {
 
     async checkAuth() {
         try {
-            const { data } = await api.post("/auth/refresh");
+            const { data } = await doRefresh();
             setAccessToken(data.accessToken);
             authProvider.isAuthenticated = true;
             
-            const payload = JSON.parse(atob(data.accessToken.split(".")[1]));
-            authProvider.user = { id: payload.id, username: payload.username, role: payload.role };
+            authProvider.user = { 
+                id: data.user.id, 
+                username: data.user.username, 
+                role: data.user.role, 
+                firstLogin: data.user.firstLogin 
+            };
             return authProvider.user;
         } catch {
             authProvider.isAuthenticated = false;

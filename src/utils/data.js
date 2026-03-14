@@ -9,8 +9,8 @@ export async function deleteUser(userId){
     await api.delete(`/users/${userId}`);
 }
 
-export async function updateUserRole(userId,role) {
-    const {data} = await api.put(`/users/${userId}/role`,{role});
+export async function updateUser(userId, updates) {
+    const {data} = await api.put(`/users/${userId}`, updates);
     return data;
 }
 
@@ -59,6 +59,11 @@ export async function deleteList(listId) {
     await api.delete(`/lists/${listId}`);
 }
 
+export async function copyList(listId) {
+    const { data } = await api.post(`/lists/${listId}/copy`);
+    return data;
+}
+
 export async function createCard(listId, title) {
     const { data } = await api.post(`/lists/${listId}/cards`, { title });
     return data;
@@ -77,8 +82,17 @@ export async function reorderCards(cards) {
     await api.put("/cards/reorder", { cards });
 }
 
+export async function archiveBoard(boardId) {
+    await api.delete(`/boards/${boardId}`);
+}
+
 export async function getCard(cardId) {
     const { data } = await api.get(`/cards/${cardId}`);
+    return data;
+}
+
+export async function searchCards(query) {
+    const { data } = await api.get(`/cards/search?q=${encodeURIComponent(query)}`);
     return data;
 }
 
@@ -92,7 +106,22 @@ export async function shareBoard(boardId, userId, role) {
     return data;
 }
 
+export async function updateBoardMember(boardId, memberId, role) {
+    const { data } = await api.put(`/boards/${boardId}/members/${memberId}`, { role });
+    return data;
+}
+
+export async function removeBoardMember(boardId, memberId) {
+    const { data } = await api.delete(`/boards/${boardId}/members/${memberId}`);
+    return data;
+}
+
 export async function getUsers() {
     const { data } = await api.get("/users");
+    return data;
+}
+
+export async function searchUsers(q) {
+    const { data } = await api.get(`/users/search?q=${encodeURIComponent(q)}`);
     return data;
 }

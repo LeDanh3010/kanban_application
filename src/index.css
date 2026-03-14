@@ -4,8 +4,8 @@
   font-family: "Trebuchet MS", "Segoe UI", "Tahoma", sans-serif;
   line-height: 1.4;
   font-weight: 400;
-  color: #1f1a17;
-  background-color: #f4f1e9;
+  color: #f8fafc;
+  background-color: #020617;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -23,15 +23,12 @@ body {
 
 body {
   margin: 0;
-  color: #1f1a17;
-  background-color: #d8d8d8;
-  background-image: url("https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=2400&q=80");
+  color: #f8fafc;
+  background-color: #020617;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
-  /* overflow-x: hidden; */
-  /* width: 5000px; */
 }
 
 #root {
@@ -60,6 +57,11 @@ body {
 @keyframes scaleIn {
   0% { opacity: 0; transform: scale(0.9); }
   100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -100% 0; }
+  100% { background-position: 100% 0; }
 }
 
 .animate-fadeIn {
